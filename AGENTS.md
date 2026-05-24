@@ -14,7 +14,7 @@ See [README.md](README.md) for project overview, [STRATEGY.md](STRATEGY.md) for 
 - **Ghidra 12.0.4** is installed at `/opt/ghidra-install/ghidra_12.0.4_PUBLIC`. Set `GHIDRA_INSTALL_DIR` accordingly.
 - **uv** package manager is at `~/.local/bin/uv`. Ensure `$HOME/.local/bin` is on `PATH`.
 - **PyGhidra** is installed from Ghidra's bundled pypkg (not PyPI). The update script reinstalls it from `$GHIDRA_INSTALL_DIR/Ghidra/Features/PyGhidra/pypkg`.
-- **ruff** is installed for linting (not a project dependency, installed separately via `uv pip install ruff`).
+- **ruff** is in the `dev` dependency group (`uv sync --dev`); CI runs `uv run ruff check` via `test-unit.yml`.
 - chromadb (semantic search) is optional and not installed; the server logs a warning but operates normally without it.
 
 ### Injected secrets (environment variables)

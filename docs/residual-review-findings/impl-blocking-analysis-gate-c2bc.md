@@ -23,9 +23,9 @@
 ### PR #44 merge verification
 
 Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)  
-**HEAD:** `c311f3f` — session-flag wait test, CI ruff, PR marked ready for review.
+**HEAD:** (after push) — adds `ruff` to `dependency-groups.dev` so unit CI `uv run ruff` succeeds.
 
-**Status:** PR #44 is **ready for review** (not draft); wait for `test-unit` CI on the PR.
+**Status:** PR #44 **ready for review**; unit workflow must pass ruff + `pytest -m unit`.
 
 ```bash
 uv run pytest tests/test_program_analysis_gate.py tests/test_tool_providers_analysis_gate.py -m unit -q
