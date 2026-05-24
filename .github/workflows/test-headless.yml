@@ -2,9 +2,9 @@ name: Test Headless Mode 🤖
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master, main, develop ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ master, main, develop ]
   workflow_dispatch:  # Allow manual trigger
 
 permissions:

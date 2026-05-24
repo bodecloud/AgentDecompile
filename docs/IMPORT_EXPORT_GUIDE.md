@@ -406,6 +406,8 @@ See also [AGENTS.md](../AGENTS.md) (Learned Workspace Facts — `open-project` /
 
 `analyzeAfterImport=false` speeds **headless/shared import**; it does **not** mean “never analyze.” Agents can still call `analyze-program` or rely on ensure-on-open.
 
+Shared version-control import responses may include `"inSessionAnalysisPending": true` when headless analysis was skipped — treat that as a signal that the next `open` / `checkout-program` in the same MCP session will run incremental ensure before listing/search tools succeed.
+
 ### Large binary handling
 
 For very large binaries you may set `analyzeAfterImport=false` on **shared/headless import** to defer headless analysis, then use the program in-session:
