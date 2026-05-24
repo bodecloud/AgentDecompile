@@ -37,6 +37,10 @@ _ANALYSIS_GATE_EXEMPT_TOOLS: frozenset[str] = frozenset(
         "svradmin",
         "debuginfo",
         "getcurrentprogram",
+        # Version-control lifecycle tools do not require an analyzed listing yet.
+        "checkoutprogram",
+        "checkinprogram",
+        "checkoutstatus",
     },
 )
 

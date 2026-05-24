@@ -115,6 +115,7 @@ When a name is ambiguous or cannot be inferred, prefer the convention that match
 ## Learned User Preferences
 
 - Prefer implementing and running (config, env, live tests) over returning instructions for the user to run.
+- After a merge or vague “continue”, infer the next slice from `STRATEGY.md`, open plans, and `docs/residual-review-findings/`; implement and open the next PR without waiting for a detailed task (see `.cursor/skills/lfg/SKILL.md` step 0).
 - Do not block the agent's main shell on long proof drivers (e.g. `scripts/lfg_cmd_sequence.ps1`): start them in a separate process, tee output to `.lfg_run/lfg_cmd_<RunId>/driver.log`, tail logs in parallel, and avoid overlapping runs without stopping the prior driver and its MCP server.
 - After fixing an issue, continue with the task without asking; run and verify, and if still broken fix and rerun until functional.
 - Fix the underlying behavior so the same user commands work unchanged; do not only improve error messages or documentation.

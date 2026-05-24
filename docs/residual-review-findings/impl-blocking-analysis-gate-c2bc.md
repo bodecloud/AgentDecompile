@@ -22,9 +22,12 @@
 ### Still open (downstream)
 
 - **P3** | e2e | Canonical `/lfg` post-merge (`scripts/lfg_validation.py` or driver)
-- **P3** | docs | Align `docs/IMPORT_EXPORT_GUIDE.md` with in-session ensure semantics
 - **P3** | `program_analysis.py` | Optional lock map pruning for long-lived servers
-- **P3** | `program_analysis.py` | Consider exempting VC tools (`checkout-program`, `checkin-program`) from redundant gate waits
+
+### Closed post-merge (2026-05-24, PR after #42)
+
+- **P3** | docs | `IMPORT_EXPORT_GUIDE.md` aligned with in-session ensure semantics — [plan](../plans/2026-05-24-post-merge-p3-hygiene.md)
+- **P3** | `program_analysis.py` | VC tools (`checkout-program`, `checkin-program`, `checkout-status`) exempt from redundant gate waits
 
 ### Filed (prior)
 
