@@ -163,6 +163,24 @@ def test_blocking_ensure_does_not_mark_when_still_needs(
 
 
 @pytest.mark.unit
+def test_wait_for_ready_releases_lock_on_idle_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    program = MagicMock()
+    df = MagicMock()
+    df.getPathname.return_value = "/wait-timeout.exe"
+    program.getDomainFile.return_value = df
+
+    monkeypatch.setattr(
+        pa,
+        "wait_for_program_analysis_idle",
+        lambda *_a, **_k: (_ for _ in ()).throw(pa.ProgramAnalysisTimeout("idle timeout")),
+    )
+    with pytest.raises(pa.ProgramAnalysisTimeout):
+        pa.wait_for_program_analysis_ready(program, program_path="/wait-timeout.exe")
+
+    assert "/wait-timeout.exe" not in pa._LOCKS
+
+
+@pytest.mark.unit
 def test_blocking_ensure_releases_lock_on_analysis_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     program = MagicMock()
     df = MagicMock()

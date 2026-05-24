@@ -86,6 +86,8 @@ CLI reuses the same server session across invocations when the same `--server-ur
 | Lint | `uv run ruff check --no-fix src/ tests/` |
 | Test (all) | `uv run pytest tests/ -v --timeout=180` |
 | Test (unit only) | `uv run pytest -m unit -v` |
+| Test (analysis gate) | `uv run pytest tests/test_program_analysis_gate.py tests/test_tool_providers_analysis_gate.py -m unit -q` |
+| CI (unit, no Ghidra) | GitHub Actions workflow `test-unit.yml` on PRs to `master` |
 | Build | `uv build` |
 
 Pre-existing lint violations (36 errors) exist in the codebase; they are not caused by the development environment. Docker-dependent e2e tests require a running Docker environment to pass.

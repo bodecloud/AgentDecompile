@@ -167,6 +167,8 @@ uv run pytest tests/ -v --timeout=120
 uv run pytest tests/test_e2e_cancelled_profile.py -v --timeout=300 -s
 ```
 
+Pull requests to `master` also run the **Unit tests (no Ghidra)** GitHub Actions workflow (`.github/workflows/test-unit.yml`), which executes `pytest -m unit` without a Ghidra install. Program analysis gate changes should pass `tests/test_program_analysis_gate.py` and `tests/test_tool_providers_analysis_gate.py` locally before push.
+
 Use markers when needed:
 
 ```bash

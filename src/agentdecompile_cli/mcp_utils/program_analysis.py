@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 from ghidrecomp.utility import analyze_program as run_analysis
@@ -80,6 +82,21 @@ def _lock_for_key(key: str) -> threading.Lock:
             lock = threading.Lock()
             _LOCKS[key] = lock
         return lock
+
+
+@contextmanager
+def _program_analysis_lock(
+    program: GhidraProgram,
+    program_path: str | None = None,
+) -> Iterator[str]:
+    """Acquire per-program lock; always prune idle entry on exit (including errors)."""
+    key = _program_lock_key(program, program_path)
+    lock = _lock_for_key(key)
+    try:
+        with lock:
+            yield key
+    finally:
+        _release_program_lock(key, lock)
 
 
 def _release_program_lock(key: str, lock: threading.Lock) -> None:
@@ -189,28 +206,23 @@ def blocking_ensure_analyzed(
     if program is None:
         return {"skipped": True, "reason": "no-program"}
 
-    key = _program_lock_key(program, program_path)
-    lock = _lock_for_key(key)
     result: dict[str, Any]
-    try:
-        with lock:
-            session_marked_done = program_info is not None and bool(
-                getattr(program_info, "ghidra_analysis_complete", False)
-            )
-            if not (session_marked_done and not program_needs_analysis(program, force=force)):
-                wait_for_program_analysis_idle(program)
-            if not program_needs_analysis(program, force=force):
+    with _program_analysis_lock(program, program_path) as key:
+        session_marked_done = program_info is not None and bool(
+            getattr(program_info, "ghidra_analysis_complete", False)
+        )
+        if not (session_marked_done and not program_needs_analysis(program, force=force)):
+            wait_for_program_analysis_idle(program)
+        if not program_needs_analysis(program, force=force):
+            mark_program_analysis_complete(program_info)
+            result = {"skipped": True, "reason": "already-analyzed", "programKey": key}
+        else:
+            logger.info("program_analysis_start key=%s force=%s", key, force)
+            _run_auto_analysis(program, force=force)
+            if not program_needs_analysis(program):
                 mark_program_analysis_complete(program_info)
-                result = {"skipped": True, "reason": "already-analyzed", "programKey": key}
-            else:
-                logger.info("program_analysis_start key=%s force=%s", key, force)
-                _run_auto_analysis(program, force=force)
-                if not program_needs_analysis(program):
-                    mark_program_analysis_complete(program_info)
-                logger.info("program_analysis_done key=%s", key)
-                result = {"ran": True, "programKey": key, "force": force}
-    finally:
-        _release_program_lock(key, lock)
+            logger.info("program_analysis_done key=%s", key)
+            result = {"ran": True, "programKey": key, "force": force}
     return result
 
 
@@ -227,16 +239,11 @@ def wait_for_program_analysis_ready(
     if program_info is not None and bool(getattr(program_info, "ghidra_analysis_complete", False)):
         if not program_needs_analysis(program):
             return
-    key = _program_lock_key(program, program_path)
-    lock = _lock_for_key(key)
-    try:
-        with lock:
+    with _program_analysis_lock(program, program_path) as key:
+        wait_for_program_analysis_idle(program, max_wait_sec=max_wait_sec)
+        if program_needs_analysis(program):
+            logger.info("program_analysis_wait_ensure key=%s", key)
+            _run_auto_analysis(program, force=False)
             wait_for_program_analysis_idle(program, max_wait_sec=max_wait_sec)
-            if program_needs_analysis(program):
-                logger.info("program_analysis_wait_ensure key=%s", key)
-                _run_auto_analysis(program, force=False)
-                wait_for_program_analysis_idle(program, max_wait_sec=max_wait_sec)
-            if not program_needs_analysis(program):
-                mark_program_analysis_complete(program_info)
-    finally:
-        _release_program_lock(key, lock)
+        if not program_needs_analysis(program):
+            mark_program_analysis_complete(program_info)
