@@ -163,6 +163,56 @@ def test_blocking_ensure_does_not_mark_when_still_needs(
 
 
 @pytest.mark.unit
+def test_blocking_ensure_releases_lock_after_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    program = MagicMock()
+    df = MagicMock()
+    df.getPathname.return_value = "/release-after-ensure.exe"
+    program.getDomainFile.return_value = df
+    info = SimpleNamespace(ghidra_analysis_complete=False, analysis_complete=False)
+
+    monkeypatch.setattr(pa, "wait_for_program_analysis_idle", lambda *_a, **_k: None)
+    with patch.object(pa, "program_needs_analysis", side_effect=[True, False]):
+        monkeypatch.setattr(pa, "run_analysis", MagicMock())
+        pa.blocking_ensure_analyzed(program, info, program_path="/release-after-ensure.exe")
+
+    assert "/release-after-ensure.exe" not in pa._LOCKS
+
+
+@pytest.mark.unit
+def test_blocking_ensure_skips_idle_wait_when_session_already_analyzed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    program = MagicMock()
+    df = MagicMock()
+    df.getPathname.return_value = "/bin.exe"
+    program.getDomainFile.return_value = df
+    info = SimpleNamespace(ghidra_analysis_complete=True, analysis_complete=True)
+
+    idle_mock = MagicMock()
+    monkeypatch.setattr(pa, "wait_for_program_analysis_idle", idle_mock)
+    with patch.object(pa, "program_needs_analysis", return_value=False):
+        result = pa.blocking_ensure_analyzed(program, info, program_path="/bin.exe")
+
+    idle_mock.assert_not_called()
+    assert result.get("skipped") is True
+
+
+@pytest.mark.unit
+def test_wait_for_program_analysis_idle_uses_adaptive_polling() -> None:
+    program = MagicMock()
+    sleeps: list[float] = []
+    with (
+        patch.object(pa.time, "time", side_effect=[0.0, 0.0, 0.1, 10.0]),
+        patch.object(pa.time, "sleep", side_effect=lambda sec: sleeps.append(sec)),
+        patch.object(pa, "_program_analysis_still_running", side_effect=[True, False]),
+    ):
+        pa.wait_for_program_analysis_idle(program, max_wait_sec=600.0)
+
+    assert len(sleeps) == 1
+    assert sleeps[0] == pa._POLL_INTERVAL_MIN_SEC
+
+
+@pytest.mark.unit
 def test_release_program_lock_prunes_idle_entry() -> None:
     key = "/prune-test.exe"
     lock = pa._lock_for_key(key)

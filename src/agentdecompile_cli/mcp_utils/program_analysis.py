@@ -25,6 +25,10 @@ _LOCKS: dict[str, threading.Lock] = {}
 _LOCKS_GUARD = threading.Lock()
 # Cap entries on long-lived MCP servers; idle locks are dropped after each ensure/wait.
 _MAX_PROGRAM_LOCKS = 512
+# Idle polling: quick checks when analysis finishes early; backoff while Ghidra is busy.
+_POLL_INTERVAL_MIN_SEC = 0.05
+_POLL_INTERVAL_MAX_SEC = 1.0
+_POLL_BACKOFF_FACTOR = 1.5
 
 # Tools that manage analysis themselves or do not need an analyzed program yet.
 _ANALYSIS_GATE_EXEMPT_TOOLS: frozenset[str] = frozenset(
@@ -145,10 +149,12 @@ def wait_for_program_analysis_idle(program: GhidraProgram, *, max_wait_sec: floa
     if program is None or max_wait_sec <= 0:
         return
     deadline = time.time() + max_wait_sec
+    interval = _POLL_INTERVAL_MIN_SEC
     while time.time() < deadline:
         if not _program_analysis_still_running(program):
             return
-        time.sleep(0.25)
+        time.sleep(interval)
+        interval = min(_POLL_INTERVAL_MAX_SEC, interval * _POLL_BACKOFF_FACTOR)
     if _program_analysis_still_running(program):
         raise ProgramAnalysisTimeout(f"Ghidra analysis did not finish within {max_wait_sec}s")
 
@@ -179,19 +185,25 @@ def blocking_ensure_analyzed(
 
     key = _program_lock_key(program, program_path)
     lock = _lock_for_key(key)
+    result: dict[str, Any]
     with lock:
-        wait_for_program_analysis_idle(program)
+        session_marked_done = program_info is not None and bool(
+            getattr(program_info, "ghidra_analysis_complete", False)
+        )
+        if not (session_marked_done and not program_needs_analysis(program, force=force)):
+            wait_for_program_analysis_idle(program)
         if not program_needs_analysis(program, force=force):
             mark_program_analysis_complete(program_info)
-            return {"skipped": True, "reason": "already-analyzed", "programKey": key}
-
-        logger.info("program_analysis_start key=%s force=%s", key, force)
-        _run_auto_analysis(program, force=force)
-        if not program_needs_analysis(program):
-            mark_program_analysis_complete(program_info)
-        logger.info("program_analysis_done key=%s", key)
-        return {"ran": True, "programKey": key, "force": force}
+            result = {"skipped": True, "reason": "already-analyzed", "programKey": key}
+        else:
+            logger.info("program_analysis_start key=%s force=%s", key, force)
+            _run_auto_analysis(program, force=force)
+            if not program_needs_analysis(program):
+                mark_program_analysis_complete(program_info)
+            logger.info("program_analysis_done key=%s", key)
+            result = {"ran": True, "programKey": key, "force": force}
     _release_program_lock(key, lock)
+    return result
 
 
 def wait_for_program_analysis_ready(

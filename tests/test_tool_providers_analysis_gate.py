@@ -31,11 +31,19 @@ class _GateProbeProvider(ToolProvider):
                 description="probe",
                 inputSchema={"type": "object", "properties": {}, "required": []},
             ),
+            types.Tool(
+                name="checkout-program",
+                description="probe vc exempt",
+                inputSchema={"type": "object", "properties": {}, "required": []},
+            ),
         ]
 
     async def call_tool(self, name: str, arguments: dict):
-        if name.replace("-", "").replace("_", "").lower() == "listprojectfiles":
+        norm = name.replace("-", "").replace("_", "").lower()
+        if norm == "listprojectfiles":
             return create_success_response({"programs": []})
+        if norm == "checkoutprogram":
+            return create_success_response({"checkedOut": True})
         return create_success_response({"ok": True})
 
 
@@ -97,6 +105,33 @@ async def test_analysis_gate_skipped_for_exempt_list_project_files(
         ),
     ):
         await gate_manager.call_tool("list-project-files", {})
+
+    to_thread_mock.assert_not_awaited()
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_analysis_gate_skipped_for_exempt_checkout_program(
+    gate_manager: ToolProviderManager,
+    program_info: SimpleNamespace,
+) -> None:
+    to_thread_mock = AsyncMock(return_value=None)
+    with (
+        patch(
+            "agentdecompile_cli.mcp_server.tool_providers.SESSION_CONTEXTS.get_program_info",
+            return_value=program_info,
+        ),
+        patch(
+            "agentdecompile_cli.mcp_server.tool_providers.SESSION_CONTEXTS.get_active_program_info",
+            return_value=program_info,
+        ),
+        patch("agentdecompile_cli.mcp_server.tool_providers.SESSION_CONTEXTS.add_tool_history"),
+        patch(
+            "agentdecompile_cli.mcp_server.tool_providers.asyncio.to_thread",
+            to_thread_mock,
+        ),
+    ):
+        await gate_manager.call_tool("checkout-program", {"programPath": "/repo/other.exe"})
 
     to_thread_mock.assert_not_awaited()
 
