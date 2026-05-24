@@ -160,3 +160,26 @@ def test_blocking_ensure_does_not_mark_when_still_needs(
 
     assert result.get("ran") is True
     assert info.ghidra_analysis_complete is False
+
+
+@pytest.mark.unit
+def test_release_program_lock_prunes_idle_entry() -> None:
+    key = "/prune-test.exe"
+    lock = pa._lock_for_key(key)
+    assert key in pa._LOCKS
+    pa._release_program_lock(key, lock)
+    assert key not in pa._LOCKS
+
+
+@pytest.mark.unit
+def test_release_program_lock_keeps_locked_entry() -> None:
+    key = "/locked-test.exe"
+    lock = pa._lock_for_key(key)
+    lock.acquire()
+    try:
+        pa._release_program_lock(key, lock)
+        assert key in pa._LOCKS
+    finally:
+        lock.release()
+    pa._release_program_lock(key, lock)
+    assert key not in pa._LOCKS

@@ -21,13 +21,13 @@
 
 ### Still open (downstream)
 
-- **P3** | e2e | Canonical `/lfg` post-merge (`scripts/lfg_validation.py` or driver)
-- **P3** | `program_analysis.py` | Optional lock map pruning for long-lived servers
+- **P3** | e2e | Canonical `/lfg` post-merge (`pytest tests/test_lfg_e2e.py -m lfg` or `scripts/lfg_validation.py` in CI)
 
 ### Closed post-merge (2026-05-24, PR after #42)
 
 - **P3** | docs | `IMPORT_EXPORT_GUIDE.md` aligned with in-session ensure semantics — [plan](../plans/2026-05-24-post-merge-p3-hygiene.md)
 - **P3** | `program_analysis.py` | VC tools (`checkout-program`, `checkin-program`, `checkout-status`) exempt from redundant gate waits
+- **P3** | `program_analysis.py` | Idle per-program lock map pruning (`_release_program_lock`, cap 512)
 
 ### Filed (prior)
 

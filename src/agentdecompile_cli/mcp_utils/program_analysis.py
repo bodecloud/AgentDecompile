@@ -23,6 +23,8 @@ class ProgramAnalysisTimeout(TimeoutError):
 
 _LOCKS: dict[str, threading.Lock] = {}
 _LOCKS_GUARD = threading.Lock()
+# Cap entries on long-lived MCP servers; idle locks are dropped after each ensure/wait.
+_MAX_PROGRAM_LOCKS = 512
 
 # Tools that manage analysis themselves or do not need an analyzed program yet.
 _ANALYSIS_GATE_EXEMPT_TOOLS: frozenset[str] = frozenset(
@@ -76,13 +78,30 @@ def _lock_for_key(key: str) -> threading.Lock:
         return lock
 
 
+def _release_program_lock(key: str, lock: threading.Lock) -> None:
+    """Remove an idle per-program lock so the map does not grow without bound."""
+    if lock.locked():
+        return
+    with _LOCKS_GUARD:
+        if _LOCKS.get(key) is not lock or lock.locked():
+            return
+        _LOCKS.pop(key, None)
+        if len(_LOCKS) <= _MAX_PROGRAM_LOCKS:
+            return
+        for other_key, other_lock in list(_LOCKS.items()):
+            if len(_LOCKS) <= _MAX_PROGRAM_LOCKS:
+                break
+            if not other_lock.locked():
+                _LOCKS.pop(other_key, None)
+
+
 def _analysis_state_done(program: GhidraProgram) -> bool | None:
     try:
         st = program.getAnalysisState()
         if st is not None and hasattr(st, "isDone"):
             return bool(st.isDone())
-    except Exception as exc:
-        logger.debug("Unable to read analysis state; treating as unknown", exc_info=exc)
+    except Exception:
+        logger.debug("Unable to read analysis state; treating as unknown", exc_info=True)
     return None
 
 
@@ -172,6 +191,7 @@ def blocking_ensure_analyzed(
             mark_program_analysis_complete(program_info)
         logger.info("program_analysis_done key=%s", key)
         return {"ran": True, "programKey": key, "force": force}
+    _release_program_lock(key, lock)
 
 
 def wait_for_program_analysis_ready(
@@ -197,3 +217,4 @@ def wait_for_program_analysis_ready(
             wait_for_program_analysis_idle(program, max_wait_sec=max_wait_sec)
         if not program_needs_analysis(program):
             mark_program_analysis_complete(program_info)
+    _release_program_lock(key, lock)
