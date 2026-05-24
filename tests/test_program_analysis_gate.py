@@ -163,6 +163,24 @@ def test_blocking_ensure_does_not_mark_when_still_needs(
 
 
 @pytest.mark.unit
+def test_wait_for_ready_skips_when_session_marked_and_ghidra_done(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    program = MagicMock()
+    df = MagicMock()
+    df.getPathname.return_value = "/session-done.exe"
+    program.getDomainFile.return_value = df
+    info = SimpleNamespace(ghidra_analysis_complete=True, analysis_complete=True)
+
+    idle_mock = MagicMock()
+    monkeypatch.setattr(pa, "wait_for_program_analysis_idle", idle_mock)
+    with patch.object(pa, "program_needs_analysis", return_value=False):
+        pa.wait_for_program_analysis_ready(program, info, program_path="/session-done.exe")
+
+    idle_mock.assert_not_called()
+
+
+@pytest.mark.unit
 def test_wait_for_ready_skips_work_when_ghidra_already_analyzed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

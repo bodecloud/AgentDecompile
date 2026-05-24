@@ -64,6 +64,8 @@ export GHIDRA_INSTALL_DIR=/path/to/ghidra
 
 - `src/agentdecompile_cli/` — CLI, server, providers, resources, utilities
 - `tests/` — pytest unit/integration/e2e coverage
+
+**Git note:** `.gitignore` matches `agentdecompile*/`, so new files under `src/agentdecompile_cli/` are ignored by default. After editing **already-tracked** Python there, stage with `git add -f path/to/file.py` (or `git add -f src/agentdecompile_cli/...`) before commit.
 - `docs/` — user, workflow, and architecture documentation
 - `docs/generated/` — machine-generated static call graph and entrypoint reachability artifacts
 - `vendor/` — upstream reference implementations used for parity checks

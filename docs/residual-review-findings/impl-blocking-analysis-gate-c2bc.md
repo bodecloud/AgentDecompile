@@ -22,7 +22,10 @@
 
 ### PR #44 merge verification
 
-Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)
+Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)  
+**HEAD (verify after pull):** `git rev-parse --short HEAD` on the branch (latest LFG pass adds session-flag test + CI ruff).
+
+**Status:** Draft PR → mark **ready for review** when CI green (`test-unit` + gate tests).
 
 ```bash
 uv run pytest tests/test_program_analysis_gate.py tests/test_tool_providers_analysis_gate.py -m unit -q
