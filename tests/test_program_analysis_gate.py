@@ -36,9 +36,9 @@ def test_wait_for_program_analysis_ready_marks_complete_only_when_done(
     info = SimpleNamespace(ghidra_analysis_complete=False, analysis_complete=False)
 
     monkeypatch.setattr(pa, "wait_for_program_analysis_idle", lambda *_a, **_k: None)
-    with patch.object(pa, "program_needs_analysis", side_effect=[True, False]):
+    with patch.object(pa, "program_needs_analysis", side_effect=[True, True, False]):
         run_mock = MagicMock()
-        monkeypatch.setattr(pa, "run_analysis", run_mock)
+        monkeypatch.setattr(pa, "_run_auto_analysis", run_mock)
         pa.wait_for_program_analysis_ready(program, info, program_path="/bin.exe")
 
     run_mock.assert_called_once()
@@ -163,6 +163,25 @@ def test_blocking_ensure_does_not_mark_when_still_needs(
 
 
 @pytest.mark.unit
+def test_wait_for_ready_skips_work_when_ghidra_already_analyzed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    program = MagicMock()
+    df = MagicMock()
+    df.getPathname.return_value = "/already-done.exe"
+    program.getDomainFile.return_value = df
+    info = SimpleNamespace(ghidra_analysis_complete=False, analysis_complete=False)
+
+    idle_mock = MagicMock()
+    monkeypatch.setattr(pa, "wait_for_program_analysis_idle", idle_mock)
+    with patch.object(pa, "program_needs_analysis", return_value=False):
+        pa.wait_for_program_analysis_ready(program, info, program_path="/already-done.exe")
+
+    idle_mock.assert_not_called()
+    assert info.ghidra_analysis_complete is True
+
+
+@pytest.mark.unit
 def test_wait_for_ready_releases_lock_on_idle_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     program = MagicMock()
     df = MagicMock()
@@ -174,7 +193,10 @@ def test_wait_for_ready_releases_lock_on_idle_timeout(monkeypatch: pytest.Monkey
         "wait_for_program_analysis_idle",
         lambda *_a, **_k: (_ for _ in ()).throw(pa.ProgramAnalysisTimeout("idle timeout")),
     )
-    with pytest.raises(pa.ProgramAnalysisTimeout):
+    with (
+        patch.object(pa, "program_needs_analysis", return_value=True),
+        pytest.raises(pa.ProgramAnalysisTimeout),
+    ):
         pa.wait_for_program_analysis_ready(program, program_path="/wait-timeout.exe")
 
     assert "/wait-timeout.exe" not in pa._LOCKS

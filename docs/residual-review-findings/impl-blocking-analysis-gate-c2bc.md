@@ -20,6 +20,18 @@
 - **P2** | `tool_providers.py` | Requested `programPath` no longer falls back to session active program for gate/wait
 - **P0/P1** | `tests/test_tool_providers_analysis_gate.py` | Gate invoke/skip, autoprereq bypass, timeout error, programPath resolution
 
+### PR #44 merge verification
+
+Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)
+
+```bash
+uv run pytest tests/test_program_analysis_gate.py tests/test_tool_providers_analysis_gate.py -m unit -q
+uv run pytest -m unit -q --timeout=120
+uv run ruff check --no-fix src/agentdecompile_cli/mcp_utils/program_analysis.py src/agentdecompile_cli/mcp_server/tool_providers.py
+```
+
+After merge: optional `pytest tests/test_lfg_e2e.py -m lfg` with Ghidra Server (see `AGENTS.md`).
+
 ### Still open (downstream)
 
 - **P3** | e2e | Canonical `/lfg` post-merge (`pytest tests/test_lfg_e2e.py -m lfg` or `scripts/lfg_validation.py` in CI)

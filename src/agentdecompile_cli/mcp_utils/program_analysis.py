@@ -240,6 +240,9 @@ def wait_for_program_analysis_ready(
         if not program_needs_analysis(program):
             return
     with _program_analysis_lock(program, program_path) as key:
+        if not program_needs_analysis(program):
+            mark_program_analysis_complete(program_info)
+            return
         wait_for_program_analysis_idle(program, max_wait_sec=max_wait_sec)
         if program_needs_analysis(program):
             logger.info("program_analysis_wait_ensure key=%s", key)
