@@ -23,7 +23,7 @@
 ### PR #44 merge verification
 
 Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)  
-**HEAD:** (after push) — adds `ruff` to `dependency-groups.dev` so unit CI `uv run ruff` succeeds.
+**HEAD:** `63086dc` — adds `ruff` to `dependency-groups.dev` so unit CI `uv run ruff` succeeds.
 
 **Status:** PR #44 **ready for review**; unit workflow must pass ruff + `pytest -m unit`.
 
