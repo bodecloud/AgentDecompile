@@ -206,6 +206,12 @@ def blocking_ensure_analyzed(
     if program is None:
         return {"skipped": True, "reason": "no-program"}
 
+    if program_info is not None and bool(getattr(program_info, "ghidra_analysis_complete", False)):
+        if not program_needs_analysis(program, force=force):
+            key = _program_lock_key(program, program_path)
+            mark_program_analysis_complete(program_info)
+            return {"skipped": True, "reason": "already-analyzed", "programKey": key}
+
     result: dict[str, Any]
     with _program_analysis_lock(program, program_path) as key:
         session_marked_done = program_info is not None and bool(

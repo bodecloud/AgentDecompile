@@ -274,6 +274,32 @@ def test_blocking_ensure_skips_idle_wait_when_session_already_analyzed(
 
     idle_mock.assert_not_called()
     assert result.get("skipped") is True
+    assert result.get("programKey") == "/bin.exe"
+    assert "/bin.exe" not in pa._LOCKS
+
+
+@pytest.mark.unit
+def test_blocking_ensure_prelock_skip_when_session_marked_and_ghidra_done(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    program = MagicMock()
+    df = MagicMock()
+    df.getPathname.return_value = "/prelock-skip.exe"
+    program.getDomainFile.return_value = df
+    info = SimpleNamespace(ghidra_analysis_complete=True, analysis_complete=True)
+
+    idle_mock = MagicMock()
+    monkeypatch.setattr(pa, "wait_for_program_analysis_idle", idle_mock)
+    with patch.object(pa, "program_needs_analysis", return_value=False):
+        result = pa.blocking_ensure_analyzed(program, info, program_path="/prelock-skip.exe")
+
+    idle_mock.assert_not_called()
+    assert result == {
+        "skipped": True,
+        "reason": "already-analyzed",
+        "programKey": "/prelock-skip.exe",
+    }
+    assert "/prelock-skip.exe" not in pa._LOCKS
 
 
 @pytest.mark.unit
