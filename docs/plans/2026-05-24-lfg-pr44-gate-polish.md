@@ -1,6 +1,6 @@
 ---
 title: LFG PR #44 — gate performance and dispatch polish
-status: active
+status: completed
 created: 2026-05-24
 pr: https://github.com/bolabaden/AgentDecompile/pull/44
 ---

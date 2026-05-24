@@ -109,6 +109,18 @@ def _analysis_state_done(program: GhidraProgram) -> bool | None:
     return None
 
 
+def _ghidra_utilities_pending(program: GhidraProgram) -> bool | None:
+    """True when Ghidra utilities say analysis is pending; False when analyzed; None if unknown."""
+    try:
+        from ghidra.program.util import GhidraProgramUtilities  # pyright: ignore[reportMissingModuleSource]
+
+        if GhidraProgramUtilities.shouldAskToAnalyze(program):
+            return True
+        return not bool(GhidraProgramUtilities.isAnalyzed(program))
+    except Exception:
+        return None
+
+
 def program_needs_analysis(program: GhidraProgram, *, force: bool = False) -> bool:
     """True when Ghidra indicates analysis should run (incremental or full)."""
     if program is None:
@@ -120,14 +132,10 @@ def program_needs_analysis(program: GhidraProgram, *, force: bool = False) -> bo
         return True
     if state_done is True:
         return False
-    try:
-        from ghidra.program.util import GhidraProgramUtilities  # pyright: ignore[reportMissingModuleSource]
-
-        if GhidraProgramUtilities.shouldAskToAnalyze(program):
-            return True
-        return not bool(GhidraProgramUtilities.isAnalyzed(program))
-    except Exception:
+    pending = _ghidra_utilities_pending(program)
+    if pending is None:
         return True
+    return pending
 
 
 def _program_analysis_still_running(program: GhidraProgram) -> bool:
@@ -136,12 +144,10 @@ def _program_analysis_still_running(program: GhidraProgram) -> bool:
         return False
     if state_done is False:
         return True
-    try:
-        from ghidra.program.util import GhidraProgramUtilities  # pyright: ignore[reportMissingModuleSource]
-
-        return bool(GhidraProgramUtilities.shouldAskToAnalyze(program))
-    except Exception:
+    pending = _ghidra_utilities_pending(program)
+    if pending is None:
         return state_done is not True
+    return pending
 
 
 def wait_for_program_analysis_idle(program: GhidraProgram, *, max_wait_sec: float = 600.0) -> None:
@@ -186,23 +192,25 @@ def blocking_ensure_analyzed(
     key = _program_lock_key(program, program_path)
     lock = _lock_for_key(key)
     result: dict[str, Any]
-    with lock:
-        session_marked_done = program_info is not None and bool(
-            getattr(program_info, "ghidra_analysis_complete", False)
-        )
-        if not (session_marked_done and not program_needs_analysis(program, force=force)):
-            wait_for_program_analysis_idle(program)
-        if not program_needs_analysis(program, force=force):
-            mark_program_analysis_complete(program_info)
-            result = {"skipped": True, "reason": "already-analyzed", "programKey": key}
-        else:
-            logger.info("program_analysis_start key=%s force=%s", key, force)
-            _run_auto_analysis(program, force=force)
-            if not program_needs_analysis(program):
+    try:
+        with lock:
+            session_marked_done = program_info is not None and bool(
+                getattr(program_info, "ghidra_analysis_complete", False)
+            )
+            if not (session_marked_done and not program_needs_analysis(program, force=force)):
+                wait_for_program_analysis_idle(program)
+            if not program_needs_analysis(program, force=force):
                 mark_program_analysis_complete(program_info)
-            logger.info("program_analysis_done key=%s", key)
-            result = {"ran": True, "programKey": key, "force": force}
-    _release_program_lock(key, lock)
+                result = {"skipped": True, "reason": "already-analyzed", "programKey": key}
+            else:
+                logger.info("program_analysis_start key=%s force=%s", key, force)
+                _run_auto_analysis(program, force=force)
+                if not program_needs_analysis(program):
+                    mark_program_analysis_complete(program_info)
+                logger.info("program_analysis_done key=%s", key)
+                result = {"ran": True, "programKey": key, "force": force}
+    finally:
+        _release_program_lock(key, lock)
     return result
 
 
@@ -221,12 +229,14 @@ def wait_for_program_analysis_ready(
             return
     key = _program_lock_key(program, program_path)
     lock = _lock_for_key(key)
-    with lock:
-        wait_for_program_analysis_idle(program, max_wait_sec=max_wait_sec)
-        if program_needs_analysis(program):
-            logger.info("program_analysis_wait_ensure key=%s", key)
-            _run_auto_analysis(program, force=False)
+    try:
+        with lock:
             wait_for_program_analysis_idle(program, max_wait_sec=max_wait_sec)
-        if not program_needs_analysis(program):
-            mark_program_analysis_complete(program_info)
-    _release_program_lock(key, lock)
+            if program_needs_analysis(program):
+                logger.info("program_analysis_wait_ensure key=%s", key)
+                _run_auto_analysis(program, force=False)
+                wait_for_program_analysis_idle(program, max_wait_sec=max_wait_sec)
+            if not program_needs_analysis(program):
+                mark_program_analysis_complete(program_info)
+    finally:
+        _release_program_lock(key, lock)

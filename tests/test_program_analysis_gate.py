@@ -163,6 +163,27 @@ def test_blocking_ensure_does_not_mark_when_still_needs(
 
 
 @pytest.mark.unit
+def test_blocking_ensure_releases_lock_on_analysis_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    program = MagicMock()
+    df = MagicMock()
+    df.getPathname.return_value = "/release-on-error.exe"
+    program.getDomainFile.return_value = df
+    info = SimpleNamespace(ghidra_analysis_complete=False, analysis_complete=False)
+
+    monkeypatch.setattr(pa, "wait_for_program_analysis_idle", lambda *_a, **_k: None)
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("analysis failed")
+
+    monkeypatch.setattr(pa, "run_analysis", _boom)
+    with patch.object(pa, "program_needs_analysis", return_value=True):
+        with pytest.raises(RuntimeError, match="analysis failed"):
+            pa.blocking_ensure_analyzed(program, info, program_path="/release-on-error.exe")
+
+    assert "/release-on-error.exe" not in pa._LOCKS
+
+
+@pytest.mark.unit
 def test_blocking_ensure_releases_lock_after_run(monkeypatch: pytest.MonkeyPatch) -> None:
     program = MagicMock()
     df = MagicMock()
