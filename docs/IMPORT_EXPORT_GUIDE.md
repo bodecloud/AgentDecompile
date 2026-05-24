@@ -396,6 +396,8 @@ If those conditions are not met, checkout/checkin remain unavailable and the too
 
 ### Analysis semantics (`analyzeAfterImport`)
 
+See also [AGENTS.md](../AGENTS.md) (Learned Workspace Facts — `open-project` / blocking ensure).
+
 | Path | `analyzeAfterImport=false` | When analysis runs |
 |------|---------------------------|-------------------|
 | Local `open` / `import-binary` | May skip headless `-noanalysis` on shared import only | **Always** `blocking_ensure_analyzed` in-session when Ghidra says analysis is needed |
