@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -11,6 +12,7 @@ from mcp import types
 from agentdecompile_cli.mcp_server.tool_providers import (
     ToolProvider,
     ToolProviderManager,
+    analysis_timeout_error_response,
     create_success_response,
     resolve_domain_program_path,
 )
@@ -279,6 +281,17 @@ async def test_requested_program_path_does_not_fallback_to_active_program(
 
     assert "program-resolution-failed" in result[0].text
     to_thread_mock.assert_not_awaited()
+
+
+@pytest.mark.unit
+def test_analysis_timeout_error_response_json_contract() -> None:
+    exc = ProgramAnalysisTimeout("Ghidra analysis did not finish within 600s")
+    result = analysis_timeout_error_response(exc, "/repo/sample.exe")
+    payload = json.loads(result[0].text)
+    assert payload["success"] is False
+    assert payload["context"]["state"] == "analysis-timeout"
+    assert payload["context"]["programPath"] == "/repo/sample.exe"
+    assert "nextSteps" in payload
 
 
 @pytest.mark.unit
