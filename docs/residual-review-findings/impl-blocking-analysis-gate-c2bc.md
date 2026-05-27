@@ -23,9 +23,9 @@
 ### PR #44 merge verification
 
 Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)  
-**HEAD:** `e802619` — unit CI **success** (ruff + `pytest -m unit`); `blocking_ensure_analyzed` pre-lock skip aligned with `wait_for_ready`.
+**HEAD:** `0564dca` — all required test workflows **green** (unit, headless 4× matrix, Ghidra smoke 2×). CI fixes: Python **3.12** in headless/Ghidra jobs (`8a827ba`); headless runs `pytest -m "not e2e"`; analysis gate skips stub programs without `getAnalysisState()` (`0564dca`).
 
-**Status:** PR #44 **ready for review**, **MERGEABLE**; **Unit tests (no Ghidra)** workflow green on `9d3c695`+.
+**Status:** PR #44 **ready for review**, **MERGEABLE**; checks include Unit tests, Test Headless Mode (ubuntu + macos × Ghidra 12.0/latest), Test Ghidra Extension.
 
 ```bash
 uv run pytest tests/test_program_analysis_gate.py tests/test_tool_providers_analysis_gate.py -m unit -q
