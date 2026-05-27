@@ -44,11 +44,6 @@ def _load_lfg_validation() -> ModuleType:
 _lfg = _load_lfg_validation()
 
 
-@pytest.fixture(scope="module")
-def lfg() -> ModuleType:
-    return _lfg
-
-
 def _run(argv: Sequence[str]) -> int:
     return _lfg.run_lfg_cli(list(argv))
 
