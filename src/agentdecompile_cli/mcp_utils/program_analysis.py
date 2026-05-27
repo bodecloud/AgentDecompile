@@ -232,8 +232,11 @@ def blocking_ensure_analyzed(
         else:
             logger.info("program_analysis_start key=%s force=%s", key, force)
             _run_auto_analysis(program, force=force)
-            if not program_needs_analysis(program):
-                mark_program_analysis_complete(program_info)
+            if program_needs_analysis(program):
+                raise ProgramAnalysisTimeout(
+                    f"Ghidra auto-analysis did not complete for program (key={key})"
+                )
+            mark_program_analysis_complete(program_info)
             logger.info("program_analysis_done key=%s", key)
             result = {"ran": True, "programKey": key, "force": force}
     return result
@@ -264,5 +267,8 @@ def wait_for_program_analysis_ready(
             logger.info("program_analysis_wait_ensure key=%s", key)
             _run_auto_analysis(program, force=False)
             wait_for_program_analysis_idle(program, max_wait_sec=max_wait_sec)
-        if not program_needs_analysis(program):
-            mark_program_analysis_complete(program_info)
+        if program_needs_analysis(program):
+            raise ProgramAnalysisTimeout(
+                f"Ghidra auto-analysis did not complete for program (key={key})"
+            )
+        mark_program_analysis_complete(program_info)

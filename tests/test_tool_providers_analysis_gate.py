@@ -168,6 +168,40 @@ async def test_analysis_gate_skipped_for_autoprereq_invocation(
 
 @pytest.mark.unit
 @pytest.mark.asyncio
+async def test_analysis_incomplete_returns_structured_error(
+    gate_manager: ToolProviderManager,
+    program_info: SimpleNamespace,
+) -> None:
+    async def _raise_incomplete(*_args, **_kwargs):
+        raise ProgramAnalysisTimeout("Ghidra auto-analysis did not complete for program (key=/repo/other.exe)")
+
+    with (
+        patch(
+            "agentdecompile_cli.mcp_server.tool_providers.SESSION_CONTEXTS.get_program_info",
+            return_value=program_info,
+        ),
+        patch(
+            "agentdecompile_cli.mcp_server.tool_providers.SESSION_CONTEXTS.get_active_program_info",
+            return_value=None,
+        ),
+        patch("agentdecompile_cli.mcp_server.tool_providers.SESSION_CONTEXTS.add_tool_history"),
+        patch(
+            "agentdecompile_cli.mcp_server.tool_providers.asyncio.to_thread",
+            side_effect=_raise_incomplete,
+        ),
+    ):
+        result = await gate_manager.call_tool(
+            "list-functions",
+            {"programPath": "/repo/other.exe", "responseFormat": "json"},
+        )
+
+    assert len(result) == 1
+    assert "analysis-timeout" in result[0].text
+    assert "did not complete" in result[0].text
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
 async def test_analysis_timeout_returns_structured_error(
     gate_manager: ToolProviderManager,
     program_info: SimpleNamespace,

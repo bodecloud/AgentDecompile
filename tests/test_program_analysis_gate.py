@@ -46,7 +46,7 @@ def test_wait_for_program_analysis_ready_marks_complete_only_when_done(
 
 
 @pytest.mark.unit
-def test_wait_for_program_analysis_ready_does_not_mark_when_still_needs(
+def test_wait_for_program_analysis_ready_raises_when_still_needs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     program = MagicMock()
@@ -56,9 +56,11 @@ def test_wait_for_program_analysis_ready_does_not_mark_when_still_needs(
     info = SimpleNamespace(ghidra_analysis_complete=False, analysis_complete=False)
 
     monkeypatch.setattr(pa, "wait_for_program_analysis_idle", lambda *_a, **_k: None)
-    with patch.object(pa, "program_needs_analysis", return_value=True):
-        run_mock = MagicMock()
-        monkeypatch.setattr(pa, "run_analysis", run_mock)
+    with (
+        patch.object(pa, "program_needs_analysis", return_value=True),
+        patch.object(pa, "_run_auto_analysis", MagicMock()),
+        pytest.raises(pa.ProgramAnalysisTimeout, match="did not complete"),
+    ):
         pa.wait_for_program_analysis_ready(program, info, program_path="/bin.exe")
 
     assert info.ghidra_analysis_complete is False
@@ -184,7 +186,7 @@ def test_wait_for_program_analysis_idle_raises_on_timeout(
 
 
 @pytest.mark.unit
-def test_blocking_ensure_does_not_mark_when_still_needs(
+def test_blocking_ensure_raises_when_still_needs_after_run(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     program = MagicMock()
@@ -193,13 +195,16 @@ def test_blocking_ensure_does_not_mark_when_still_needs(
     program.getDomainFile.return_value = df
 
     monkeypatch.setattr(pa, "wait_for_program_analysis_idle", lambda *_a, **_k: None)
-    with patch.object(pa, "program_needs_analysis", return_value=True):
+    with (
+        patch.object(pa, "program_needs_analysis", return_value=True),
+        pytest.raises(pa.ProgramAnalysisTimeout, match="did not complete"),
+    ):
         run_mock = MagicMock()
         monkeypatch.setattr(pa, "run_analysis", run_mock)
         info = SimpleNamespace(ghidra_analysis_complete=False, analysis_complete=False)
-        result = pa.blocking_ensure_analyzed(program, info, program_path="/bin.exe")
+        pa.blocking_ensure_analyzed(program, info, program_path="/bin.exe")
 
-    assert result.get("ran") is True
+    run_mock.assert_called_once()
     assert info.ghidra_analysis_complete is False
 
 
