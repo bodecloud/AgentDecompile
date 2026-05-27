@@ -46,28 +46,13 @@ jobs:
         version: ${{ matrix.ghidra-version }}
         auth_token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v5
-      with:
-        gradle-version: "8.14"
-
-    - name: Build AgentDecompile Extension
-      run: gradle clean buildExtension --no-build-cache
-
-    - name: Install AgentDecompile Extension to Ghidra
-      run: |
-        EXTENSION_ZIP=$(ls -1 dist/*.zip | head -n 1)
-        echo "Installing extension: $EXTENSION_ZIP"
-        unzip -q "$EXTENSION_ZIP" -d "$GHIDRA_INSTALL_DIR/Ghidra/Extensions/"
-        ls -la "$GHIDRA_INSTALL_DIR/Ghidra/Extensions/"
-
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
 
     - name: Install Python dependencies
-      run: uv sync --prerelease=allow
+      run: uv sync --all-extras --dev
 
     - name: Install PyGhidra from local Ghidra
       run: |

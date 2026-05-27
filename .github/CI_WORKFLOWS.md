@@ -10,8 +10,8 @@ flowchart TD
     A --> E[publish-pypi.yml]
     A --> F[docker-push.yml]
     A --> G[claude.yml]
-    B --> H[Build Ghidra extension artifacts]
-    C --> I[Build extension install PyGhidra run pytest]
+    B --> H[PyGhidra import smoke on Ghidra matrix]
+    C --> I[Install PyGhidra run pytest]
     D --> J[Sign and publish Ghidra release zips]
     E --> K[Build and publish Python packages]
     F --> L[Build and publish container images]
@@ -33,12 +33,12 @@ This workflow is the narrow extension-build check. It does not run the full Pyth
 ### `test-headless.yml`
 
 - Purpose: exercise the Python and PyGhidra test stack in CI.
-- Triggers: push and pull request activity targeting `main` or `develop`, plus manual `workflow_dispatch`.
+- Triggers: push and pull request activity targeting `master`, `main`, or `develop`, plus manual `workflow_dispatch`.
 - Matrix: `ubuntu-latest` and `macos-latest` x Ghidra `12.0` and `latest`.
-- Runtime: Java 21, Python 3.10, Gradle 8.14, `uv`, downloaded Ghidra installation.
-- Test command: `uv run pytest tests/ -v --timeout=120 --tb=short --junitxml=test-results.xml`.
+- Runtime: Java 21, Python 3.10, `uv`, downloaded Ghidra installation, PyGhidra from bundled pypkg.
+- Test command: `uv run pytest tests/ -v --timeout=180 --tb=short --junitxml=test-results.xml`.
 
-The workflow builds the extension, installs it into the downloaded Ghidra directory, installs PyGhidra from that same installation, and then runs the Python test suite. That makes it the closest CI approximation of the supported headless runtime.
+The workflow installs PyGhidra from the downloaded Ghidra tree and runs the Python test suite (no Gradle extension build; Java extension sources were removed from the repo).
 
 ### `publish-ghidra.yml`
 
