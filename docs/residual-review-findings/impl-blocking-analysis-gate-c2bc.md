@@ -39,6 +39,10 @@ After merge: optional `pytest tests/test_lfg_e2e.py -m lfg` with Ghidra Server (
 
 - **P3** | e2e | Canonical `/lfg` post-merge (`pytest tests/test_lfg_e2e.py -m lfg` or `scripts/lfg_validation.py` in CI)
 
+### Closed (2026-05-24 LFG)
+
+- **P3** | `tool_providers.py` | Provider-raised `ProgramAnalysisTimeout` (e.g. open/import ensure) returns structured `analysis-timeout` like gate path
+
 ### Closed post-merge (2026-05-24, PR after #42)
 
 - **P3** | docs | `IMPORT_EXPORT_GUIDE.md` aligned with in-session ensure semantics — [plan](../plans/2026-05-24-post-merge-p3-hygiene.md)

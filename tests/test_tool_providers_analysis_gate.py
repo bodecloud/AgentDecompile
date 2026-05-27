@@ -264,3 +264,28 @@ async def test_requested_program_path_does_not_fallback_to_active_program(
 
     assert "program-resolution-failed" in result[0].text
     to_thread_mock.assert_not_awaited()
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_provider_analysis_timeout_returns_structured_error(
+    gate_manager: ToolProviderManager,
+) -> None:
+    """Exempt tools skip the gate; provider-raised ProgramAnalysisTimeout still maps to analysis-timeout."""
+
+    async def _raise_from_provider(_name: str, _arguments: dict):
+        raise ProgramAnalysisTimeout("Ghidra auto-analysis did not complete during open")
+
+    probe = gate_manager._tool_map["listprojectfiles"]
+    with (
+        patch("agentdecompile_cli.mcp_server.tool_providers.SESSION_CONTEXTS.add_tool_history"),
+        patch.object(probe, "call_tool", side_effect=_raise_from_provider),
+    ):
+        result = await gate_manager.call_tool(
+            "list-project-files",
+            {"responseFormat": "json"},
+        )
+
+    assert len(result) == 1
+    assert "analysis-timeout" in result[0].text
+    assert "did not complete" in result[0].text
