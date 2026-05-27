@@ -65,6 +65,15 @@ def test_wait_for_program_analysis_ready_does_not_mark_when_still_needs(
 
 
 @pytest.mark.unit
+def test_program_needs_analysis_false_for_stub_without_analysis_state() -> None:
+    class _StubProgram:
+        def getName(self) -> str:
+            return "stub"
+
+    assert pa.program_needs_analysis(_StubProgram()) is False  # type: ignore[arg-type]
+
+
+@pytest.mark.unit
 def test_program_needs_analysis_when_state_not_done() -> None:
     program = MagicMock()
     state = MagicMock()

@@ -35,9 +35,9 @@ This workflow does not run the full pytest suite.
 - Triggers: push and pull request activity targeting `master`, `main`, or `develop`, plus manual `workflow_dispatch`.
 - Matrix: `ubuntu-latest` and `macos-latest` x Ghidra `12.0` and `latest`.
 - Runtime: Java 21, Python 3.12, `uv`, downloaded Ghidra installation, PyGhidra from bundled pypkg.
-- Test command: `uv run pytest tests/ -v --timeout=180 --tb=short --junitxml=test-results.xml`.
+- Test command: `uv run pytest tests/ -m "not e2e" -v --timeout=180 --tb=short --junitxml=test-results.xml`.
 
-The workflow installs PyGhidra from the downloaded Ghidra tree and runs the Python test suite (no Gradle extension build; Java extension sources were removed from the repo).
+The workflow installs PyGhidra from the downloaded Ghidra tree and runs the non-e2e pytest suite (unit, provider, and CLI tests). Live-server e2e modules (`test_e2e_*`, `test_get_function_live_decompilation`) are excluded; they require long-running subprocess MCP servers and are not suitable for the default matrix. Unit-only coverage also runs in `test-unit.yml`.
 
 ### `publish-ghidra.yml`
 

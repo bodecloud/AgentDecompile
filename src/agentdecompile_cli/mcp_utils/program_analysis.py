@@ -58,6 +58,11 @@ def analysis_gate_exempt_tool(norm_tool_name: str) -> bool:
     return norm_tool_name in _ANALYSIS_GATE_EXEMPT_TOOLS
 
 
+def _program_supports_analysis_observation(program: GhidraProgram) -> bool:
+    """Return False for test doubles and other objects that are not Ghidra programs."""
+    return callable(getattr(program, "getAnalysisState", None))
+
+
 def _program_lock_key(program: GhidraProgram, program_path: str | None = None) -> str:
     try:
         df = program.getDomainFile()
@@ -142,6 +147,8 @@ def program_needs_analysis(program: GhidraProgram, *, force: bool = False) -> bo
     """True when Ghidra indicates analysis should run (incremental or full)."""
     if program is None:
         return False
+    if not _program_supports_analysis_observation(program):
+        return False
     if force:
         return True
     state_done = _analysis_state_done(program)
@@ -169,7 +176,7 @@ def _program_analysis_still_running(program: GhidraProgram) -> bool:
 
 def wait_for_program_analysis_idle(program: GhidraProgram, *, max_wait_sec: float = 600.0) -> None:
     """Poll Ghidra analysis state until idle or raise ProgramAnalysisTimeout."""
-    if program is None or max_wait_sec <= 0:
+    if program is None or max_wait_sec <= 0 or not _program_supports_analysis_observation(program):
         return
     deadline = time.time() + max_wait_sec
     interval = _POLL_INTERVAL_MIN_SEC
@@ -241,6 +248,9 @@ def wait_for_program_analysis_ready(
 ) -> None:
     """Block until analysis is complete; run incremental ensure if still needed."""
     if program is None:
+        return
+    if not _program_supports_analysis_observation(program):
+        mark_program_analysis_complete(program_info)
         return
     if program_info is not None and bool(getattr(program_info, "ghidra_analysis_complete", False)):
         if not program_needs_analysis(program):
