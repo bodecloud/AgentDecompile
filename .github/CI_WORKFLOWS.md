@@ -22,20 +22,19 @@ flowchart TD
 
 ### `test-ghidra.yml`
 
-- Purpose: validate the Gradle-based Ghidra extension build.
-- Triggers: push and pull request activity targeting `main` or `develop`.
+- Purpose: smoke-test PyGhidra and `agentdecompile_cli` imports against downloaded Ghidra (no Java extension build).
+- Triggers: push and pull request activity targeting `master`, `main`, or `develop`.
 - Matrix: `ubuntu-latest` x Ghidra `12.0` and `latest`.
-- Runtime: Java 21, Gradle 8.14, Xvfb, downloaded Ghidra installation.
-- Output: extension build artifacts uploaded from each matrix job.
+- Runtime: Java 21, Xvfb, `uv`, PyGhidra from `$GHIDRA_INSTALL_DIR/Ghidra/Features/PyGhidra/pypkg`.
 
-This workflow is the narrow extension-build check. It does not run the full Python test suite.
+This workflow does not run the full pytest suite.
 
 ### `test-headless.yml`
 
 - Purpose: exercise the Python and PyGhidra test stack in CI.
 - Triggers: push and pull request activity targeting `master`, `main`, or `develop`, plus manual `workflow_dispatch`.
 - Matrix: `ubuntu-latest` and `macos-latest` x Ghidra `12.0` and `latest`.
-- Runtime: Java 21, Python 3.10, `uv`, downloaded Ghidra installation, PyGhidra from bundled pypkg.
+- Runtime: Java 21, Python 3.12, `uv`, downloaded Ghidra installation, PyGhidra from bundled pypkg.
 - Test command: `uv run pytest tests/ -v --timeout=180 --tb=short --junitxml=test-results.xml`.
 
 The workflow installs PyGhidra from the downloaded Ghidra tree and runs the Python test suite (no Gradle extension build; Java extension sources were removed from the repo).
