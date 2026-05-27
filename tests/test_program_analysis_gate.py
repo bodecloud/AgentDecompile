@@ -388,5 +388,15 @@ def test_release_program_lock_keeps_locked_entry() -> None:
 
 @pytest.mark.unit
 def test_program_analysis_module_exports_public_api() -> None:
+    expected = {
+        "ProgramAnalysisTimeout",
+        "analysis_gate_exempt_tool",
+        "blocking_ensure_analyzed",
+        "mark_program_analysis_complete",
+        "program_needs_analysis",
+        "wait_for_program_analysis_idle",
+        "wait_for_program_analysis_ready",
+    }
+    assert set(pa.__all__) == expected
     for name in pa.__all__:
         assert hasattr(pa, name), f"missing export: {name}"
