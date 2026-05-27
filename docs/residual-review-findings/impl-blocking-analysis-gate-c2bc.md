@@ -23,7 +23,7 @@
 ### PR #44 merge verification
 
 Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)  
-**HEAD:** `55abe1d` — all merge-blocking workflows **green** on tip (unit, headless 4× matrix, Ghidra extension 4×). Fail-closed gate fix (`88a9c3e`); CI Python 3.12 + `not e2e` + stub skip (`8a827ba`, `0564dca`); review (`4d7a1a2`). Docker image matrix may still run in background; not merge-blocking.
+**HEAD:** `a40ff68`+ — merge-blocking workflows green (unit, headless, Ghidra extension). Latest: structured `analysis-timeout` for provider-raised timeouts (`a40ff68`, review re-raise in base handler).
 
 **Status:** PR #44 **ready for review**, **MERGEABLE**; checks include Unit tests, Test Headless Mode (ubuntu + macos × Ghidra 12.0/latest), Test Ghidra Extension.
 
