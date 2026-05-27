@@ -892,6 +892,8 @@ class ToolProvider:
                 logger.debug("project_context_inject_skip: %s", inject_exc)
 
             return result
+        except ProgramAnalysisTimeout:
+            raise
         except Exception as e:
             logger.error("tool=%s error=%s message=%s", canonical_tool, e.__class__.__name__, e)
             extra_context: dict[str, Any] | None = None

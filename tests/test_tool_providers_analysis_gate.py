@@ -17,7 +17,11 @@ from agentdecompile_cli.mcp_utils.program_analysis import ProgramAnalysisTimeout
 
 
 class _GateProbeProvider(ToolProvider):
-    """Minimal provider for list-functions and list-project-files."""
+    """Minimal provider for list-functions, list-project-files, and open."""
+
+    HANDLERS = {
+        "open": "_handle_open",
+    }
 
     def list_tools(self) -> list[types.Tool]:
         return [
@@ -36,10 +40,20 @@ class _GateProbeProvider(ToolProvider):
                 description="probe vc exempt",
                 inputSchema={"type": "object", "properties": {}, "required": []},
             ),
+            types.Tool(
+                name="open",
+                description="probe exempt open",
+                inputSchema={"type": "object", "properties": {}, "required": []},
+            ),
         ]
+
+    async def _handle_open(self, _args: dict):
+        raise ProgramAnalysisTimeout("Ghidra auto-analysis did not complete during open")
 
     async def call_tool(self, name: str, arguments: dict):
         norm = name.replace("-", "").replace("_", "").lower()
+        if norm == "open":
+            return await super().call_tool(name, arguments)
         if norm == "listprojectfiles":
             return create_success_response({"programs": []})
         if norm == "checkoutprogram":
@@ -271,19 +285,12 @@ async def test_requested_program_path_does_not_fallback_to_active_program(
 async def test_provider_analysis_timeout_returns_structured_error(
     gate_manager: ToolProviderManager,
 ) -> None:
-    """Exempt tools skip the gate; provider-raised ProgramAnalysisTimeout still maps to analysis-timeout."""
+    """Exempt tools skip the gate; handler-raised ProgramAnalysisTimeout maps to analysis-timeout."""
 
-    async def _raise_from_provider(_name: str, _arguments: dict):
-        raise ProgramAnalysisTimeout("Ghidra auto-analysis did not complete during open")
-
-    probe = gate_manager._tool_map["listprojectfiles"]
-    with (
-        patch("agentdecompile_cli.mcp_server.tool_providers.SESSION_CONTEXTS.add_tool_history"),
-        patch.object(probe, "call_tool", side_effect=_raise_from_provider),
-    ):
+    with patch("agentdecompile_cli.mcp_server.tool_providers.SESSION_CONTEXTS.add_tool_history"):
         result = await gate_manager.call_tool(
-            "list-project-files",
-            {"responseFormat": "json"},
+            "open",
+            {"path": "/tmp/sample.exe", "responseFormat": "json"},
         )
 
     assert len(result) == 1
