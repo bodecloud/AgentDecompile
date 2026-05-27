@@ -295,6 +295,13 @@ def test_analysis_timeout_error_response_json_contract() -> None:
 
 
 @pytest.mark.unit
+def test_analysis_timeout_error_response_empty_program_path() -> None:
+    exc = ProgramAnalysisTimeout("timed out")
+    payload = json.loads(analysis_timeout_error_response(exc, None)[0].text)
+    assert payload["context"]["programPath"] == ""
+
+
+@pytest.mark.unit
 def test_resolve_domain_program_path_prefers_domain_file_pathname() -> None:
     program = MagicMock()
     program.getDomainFile.return_value.getPathname.return_value = "/repo/foo.exe"
