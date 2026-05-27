@@ -12,6 +12,7 @@ from agentdecompile_cli.mcp_server.tool_providers import (
     ToolProvider,
     ToolProviderManager,
     create_success_response,
+    resolve_domain_program_path,
 )
 from agentdecompile_cli.mcp_utils.program_analysis import ProgramAnalysisTimeout
 
@@ -278,6 +279,34 @@ async def test_requested_program_path_does_not_fallback_to_active_program(
 
     assert "program-resolution-failed" in result[0].text
     to_thread_mock.assert_not_awaited()
+
+
+@pytest.mark.unit
+def test_resolve_domain_program_path_prefers_domain_file_pathname() -> None:
+    program = MagicMock()
+    program.getDomainFile.return_value.getPathname.return_value = "/repo/foo.exe"
+    assert resolve_domain_program_path(program, "/fallback.exe") == "/repo/foo.exe"
+
+
+@pytest.mark.unit
+def test_resolve_domain_program_path_uses_fallback_when_pathname_empty() -> None:
+    program = MagicMock()
+    program.getDomainFile.return_value.getPathname.return_value = "   "
+    assert resolve_domain_program_path(program, "/fallback.exe") == "/fallback.exe"
+
+
+@pytest.mark.unit
+def test_resolve_domain_program_path_uses_fallback_when_no_domain_file() -> None:
+    program = MagicMock()
+    program.getDomainFile.return_value = None
+    assert resolve_domain_program_path(program, "/fallback.exe") == "/fallback.exe"
+
+
+@pytest.mark.unit
+def test_resolve_domain_program_path_uses_fallback_on_get_domain_file_error() -> None:
+    program = MagicMock()
+    program.getDomainFile.side_effect = RuntimeError("no domain file")
+    assert resolve_domain_program_path(program, "/fallback.exe") == "/fallback.exe"
 
 
 @pytest.mark.unit
