@@ -23,7 +23,7 @@
 ### PR #44 merge verification
 
 Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)  
-**HEAD:** `253bb4b` — merge-blocking CI **green** (unit, headless 4×, Ghidra extension 4× on `253bb4b`). **66** unit tests locally. PR **ready to merge**; live Ghidra Server `/lfg` (`scripts/lfg_cmd_sequence.ps1`) post-merge (P3).
+**HEAD:** `1ac2d9c` — merge-blocking CI **green** on `253bb4b` (re-run on `1ac2d9c` expected). **66** unit tests. PR **ready to merge**; live `/lfg` driver post-merge (P3).
 
 **Status:** PR #44 **ready for review**, **MERGEABLE**; checks include Unit tests, Test Headless Mode (ubuntu + macos × Ghidra 12.0/latest), Test Ghidra Extension.
 
