@@ -23,7 +23,7 @@
 ### PR #44 merge verification
 
 Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)  
-**HEAD:** `60ca6d2`+ — merge-blocking workflows **green** (unit, headless 4×, Ghidra extension 4× on `60ca6d2`). Analysis-timeout from gate + provider (`a40ff68`, `b0b9f39`). PR **ready to merge**.
+**HEAD:** `9df2438` — merge-blocking workflows **green** (unit, headless 4×, Ghidra extension 4×). Analysis-timeout gate + provider (`b0b9f39`); path dedup (`9df2438`). PR **ready to merge**.
 
 **Status:** PR #44 **ready for review**, **MERGEABLE**; checks include Unit tests, Test Headless Mode (ubuntu + macos × Ghidra 12.0/latest), Test Ghidra Extension.
 
