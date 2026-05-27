@@ -31,7 +31,7 @@ uv run pytest -m unit -q --timeout=120
 uv run ruff check --no-fix src/agentdecompile_cli/mcp_utils/program_analysis.py src/agentdecompile_cli/mcp_server/tool_providers.py
 ```
 
-After merge: `tests/test_lfg_e2e.py` provides fast smoke (no `lfg` marker) and opt-in full stack when `LFG_RUN=1` (see `AGENTS.md`).
+After merge: `tests/test_lfg_e2e.py` provides fast smoke (no `lfg` marker) and opt-in full stack when `LFG_RUN=1` (see `tests/README.md` and `.cursor/commands/lfg.md`).
 
 ### Still open (downstream)
 
