@@ -682,6 +682,19 @@ def create_error_response(
     return [types.TextContent(type="text", text=_json.dumps(payload))]
 
 
+def resolve_domain_program_path(program: Any, fallback_path: str | None) -> str | None:
+    """Prefer DomainFile pathname over session/request fallback for error context."""
+    try:
+        domain_file = program.getDomainFile()
+        if domain_file is not None:
+            pathname = str(domain_file.getPathname()).strip()
+            if pathname:
+                return pathname
+    except Exception as e:
+        logger.debug("Unable to resolve program path from DomainFile; using fallback: %s", e)
+    return fallback_path
+
+
 def analysis_timeout_error_response(
     exc: ProgramAnalysisTimeout,
     program_path: str | None,
@@ -2573,6 +2586,13 @@ class ToolProviderManager:
             except Exception as e:
                 logger.warning(f"Failed to set session program info for {provider.__class__.__name__}: {e}")
 
+        resolved_prog_path: str | None = requested_program_key or SESSION_CONTEXTS.get_active_program_key(session_id)
+        if effective_program_info is not None and effective_program_info.program is not None:
+            resolved_prog_path = resolve_domain_program_path(
+                effective_program_info.program,
+                resolved_prog_path,
+            )
+
         if (
             effective_program_info is not None
             and effective_program_info.program is not None
@@ -2582,40 +2602,21 @@ class ToolProviderManager:
             from agentdecompile_cli.mcp_utils.program_analysis import wait_for_program_analysis_ready
 
             prog = effective_program_info.program
-            prog_path = requested_program_key or SESSION_CONTEXTS.get_active_program_key(session_id)
-            try:
-                df = prog.getDomainFile()
-                if df is not None:
-                    pathname = str(df.getPathname()).strip()
-                    if pathname:
-                        prog_path = pathname
-            except Exception as e:
-                logger.debug("Unable to resolve program path from DomainFile; using fallback program key/path: %s", e)
             try:
                 await asyncio.to_thread(
                     wait_for_program_analysis_ready,
                     prog,
                     effective_program_info,
-                    program_path=prog_path,
+                    program_path=resolved_prog_path,
                 )
             except ProgramAnalysisTimeout as exc:
-                return analysis_timeout_error_response(exc, prog_path)
+                return analysis_timeout_error_response(exc, resolved_prog_path)
 
         # Dispatch to the provider that owns this tool; provider receives original name + normalized args
-        timeout_prog_path: str | None = requested_program_key or SESSION_CONTEXTS.get_active_program_key(session_id)
-        if effective_program_info is not None and effective_program_info.program is not None:
-            try:
-                _df = effective_program_info.program.getDomainFile()
-                if _df is not None:
-                    _pathname = str(_df.getPathname()).strip()
-                    if _pathname:
-                        timeout_prog_path = _pathname
-            except Exception as e:
-                logger.debug("Unable to resolve program path for analysis timeout: %s", e)
         try:
             result = await provider.call_tool(name, arguments)
         except ProgramAnalysisTimeout as exc:
-            return analysis_timeout_error_response(exc, timeout_prog_path)
+            return analysis_timeout_error_response(exc, resolved_prog_path)
         logger.info(
             "mcp provider returned tool=%s provider=%s response_parts=%s",
             resolved_name,
