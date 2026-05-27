@@ -310,6 +310,13 @@ def test_resolve_domain_program_path_uses_fallback_on_get_domain_file_error() ->
 
 
 @pytest.mark.unit
+def test_resolve_domain_program_path_returns_none_when_no_path_available() -> None:
+    program = MagicMock()
+    program.getDomainFile.return_value = None
+    assert resolve_domain_program_path(program, None) is None
+
+
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_provider_analysis_timeout_returns_structured_error(
     gate_manager: ToolProviderManager,
