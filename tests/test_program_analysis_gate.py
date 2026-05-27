@@ -74,6 +74,38 @@ def test_program_needs_analysis_false_for_stub_without_analysis_state() -> None:
 
 
 @pytest.mark.unit
+def test_wait_for_ready_marks_stub_without_analysis_state_complete() -> None:
+    class _StubProgram:
+        def getName(self) -> str:
+            return "stub"
+
+    info = SimpleNamespace(ghidra_analysis_complete=False, analysis_complete=False)
+    pa.wait_for_program_analysis_ready(_StubProgram(), info)  # type: ignore[arg-type]
+    assert info.ghidra_analysis_complete is True
+    assert not pa._LOCKS
+
+
+@pytest.mark.unit
+def test_blocking_ensure_skips_stub_without_analysis_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _StubProgram:
+        def getName(self) -> str:
+            return "stub"
+
+    run_mock = MagicMock()
+    monkeypatch.setattr(pa, "run_analysis", run_mock)
+    info = SimpleNamespace(ghidra_analysis_complete=False, analysis_complete=False)
+    result = pa.blocking_ensure_analyzed(_StubProgram(), info)  # type: ignore[arg-type]
+
+    run_mock.assert_not_called()
+    assert result.get("skipped") is True
+    assert result.get("reason") == "already-analyzed"
+    assert info.ghidra_analysis_complete is True
+    assert not pa._LOCKS
+
+
+@pytest.mark.unit
 def test_program_needs_analysis_when_state_not_done() -> None:
     program = MagicMock()
     state = MagicMock()
