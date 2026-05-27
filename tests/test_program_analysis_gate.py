@@ -384,3 +384,9 @@ def test_release_program_lock_keeps_locked_entry() -> None:
         lock.release()
     pa._release_program_lock(key, lock)
     assert key not in pa._LOCKS
+
+
+@pytest.mark.unit
+def test_program_analysis_module_exports_public_api() -> None:
+    for name in pa.__all__:
+        assert hasattr(pa, name), f"missing export: {name}"
