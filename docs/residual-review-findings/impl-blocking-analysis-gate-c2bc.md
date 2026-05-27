@@ -23,7 +23,7 @@
 ### PR #44 merge verification
 
 Branch: `impl/blocking-analysis-gate-c2bc` → [#44](https://github.com/bolabaden/AgentDecompile/pull/44)  
-**HEAD:** `4d7a1a2` — required test workflows **green** on latest push (unit, Ghidra extension 4× matrix). CI fixes: Python **3.12** in headless/Ghidra jobs (`8a827ba`); headless runs `pytest -m "not e2e"`; analysis gate skips stub programs without `getAnalysisState()` (`0564dca`); review autofix removes dead `_can_checkin` (`4d7a1a2`). Docker image builds may still be pending; not merge-blocking per LFG scope.
+**HEAD:** `88a9c3e` — required test workflows **green** on prior push (unit, Ghidra extension 4× matrix); re-run after `88a9c3e` fail-closed gate fix. CI fixes: Python **3.12** (`8a827ba`); headless `pytest -m "not e2e"` + stub skip (`0564dca`); review autofixes (`4d7a1a2`, `88a9c3e`). Docker image builds informational only.
 
 **Status:** PR #44 **ready for review**, **MERGEABLE**; checks include Unit tests, Test Headless Mode (ubuntu + macos × Ghidra 12.0/latest), Test Ghidra Extension.
 

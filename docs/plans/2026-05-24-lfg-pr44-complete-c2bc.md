@@ -1,6 +1,6 @@
 ---
 title: LFG PR #44 — complete pipeline (CI verified, ship)
-status: active
+status: completed
 created: 2026-05-24
 pr: https://github.com/bolabaden/AgentDecompile/pull/44
 branch: impl/blocking-analysis-gate-c2bc
