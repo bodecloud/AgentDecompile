@@ -1,5 +1,5 @@
 ---
-title: Agent-native MCP patterns from PR #49 audit follow-up
+title: "Agent-native MCP patterns from PR #49 audit follow-up"
 date: 2026-05-24
 category: architecture-patterns
 module: agentdecompile_cli.mcp_server
