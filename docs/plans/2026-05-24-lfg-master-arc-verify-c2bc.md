@@ -1,7 +1,7 @@
 ---
 title: LFG — master arc verification (post PR #51)
 type: chore
-status: active
+status: completed
 date: 2026-05-28
 branch: master
 head: adaa472
