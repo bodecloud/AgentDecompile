@@ -1,7 +1,7 @@
 ---
 title: LFG — P2-2 delete_label on manage-symbols
 type: feat
-status: active
+status: completed
 date: 2026-05-24
 branch: impl/agent-native-audit-c2bc
 pr: https://github.com/bolabaden/AgentDecompile/pull/49
