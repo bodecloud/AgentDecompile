@@ -16,6 +16,7 @@ Every successful tool response (and most errors when programs are loaded) includ
 | `activeProgram` | Currently selected program path |
 | `openPrograms` | Programs loaded in this session |
 | `analysisComplete` | Ghidra auto-analysis finished for active program |
+| `analysisByProgram` | Per-program analysis flags when multiple programs are open |
 | `checkoutSummary` | Shared mode: checked-out / modified / can-checkin counts |
 | `projectPath` / `projectName` | Local project location |
 | `serverHost` / `serverPort` / `repository` | Shared server connection |

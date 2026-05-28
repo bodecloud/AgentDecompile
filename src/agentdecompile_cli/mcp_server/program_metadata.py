@@ -239,6 +239,11 @@ def collect_program_summary(program_info: ProgramInfo) -> dict[str, Any]:
 def _analysis_complete_for_info(program_info: Any) -> bool | None:
     if program_info is None:
         return None
+    if hasattr(program_info, "analysis_complete"):
+        try:
+            return bool(program_info.analysis_complete)
+        except Exception:
+            pass
     value = getattr(program_info, "ghidra_analysis_complete", None)
     if value is None:
         return None
@@ -258,12 +263,22 @@ def _resolve_domain_file(program_info: Any) -> Any | None:
         return None
 
 
+def _domain_file_checkout_flags(df: Any) -> tuple[bool, bool, bool] | None:
+    try:
+        return (
+            bool(df.isCheckedOut()),
+            bool(df.modifiedSinceCheckout()),
+            bool(df.canCheckin()),
+        )
+    except Exception:
+        return None
+
+
 def _compact_checkout_summary(
     open_programs: dict[str, Any],
     *,
     is_shared: bool,
 ) -> dict[str, Any] | None:
-    """Aggregate checkout/versioning flags for open programs (shared mode only)."""
     if not is_shared or not open_programs:
         return None
 
@@ -276,14 +291,12 @@ def _compact_checkout_summary(
         df = _resolve_domain_file(info)
         if df is None:
             continue
-        entry: dict[str, Any] = {"program": str(path)}
-        try:
-            is_checked_out = bool(df.isCheckedOut())
-            is_modified = bool(df.modifiedSinceCheckout())
-            can_ci = bool(df.canCheckin())
-        except Exception:
+        flags = _domain_file_checkout_flags(df)
+        if flags is None:
             continue
 
+        is_checked_out, is_modified, can_ci = flags
+        entry: dict[str, Any] = {"program": str(path)}
         if is_checked_out:
             checked_out += 1
             entry["isCheckedOut"] = True
@@ -319,12 +332,15 @@ def collect_project_context(session_id: str) -> dict[str, Any] | None:
     handle = session.project_handle
     open_programs = session.open_programs or {}
     active_key = session.active_program_key
-    project_inventory = _collect_project_inventory_program_keys(session)
-    open_program_keys = _dedupe_program_keys(list(open_programs.keys()))
 
-    # Nothing loaded → skip
-    if not handle and not open_programs and not project_inventory:
-        return None
+    if not handle and not open_programs:
+        project_inventory = _collect_project_inventory_program_keys(session)
+        if not project_inventory:
+            return None
+    else:
+        project_inventory = _collect_project_inventory_program_keys(session)
+
+    open_program_keys = _dedupe_program_keys(list(open_programs.keys()))
 
     ctx: dict[str, Any] = {}
 
@@ -354,19 +370,15 @@ def collect_project_context(session_id: str) -> dict[str, Any] | None:
     if active_key:
         ctx["activeProgram"] = active_key
 
-    if active_key and active_key in open_programs:
-        analysis_complete = _analysis_complete_for_info(open_programs[active_key])
-        if analysis_complete is not None:
-            ctx["analysisComplete"] = analysis_complete
-
-    if len(open_program_keys) > 1:
-        analysis_by_program: dict[str, bool] = {}
-        for key in open_program_keys:
-            complete = _analysis_complete_for_info(open_programs.get(key))
-            if complete is not None:
-                analysis_by_program[key] = complete
-        if analysis_by_program:
-            ctx["analysisByProgram"] = analysis_by_program
+    analysis_by_program: dict[str, bool] = {}
+    for key in open_program_keys:
+        complete = _analysis_complete_for_info(open_programs.get(key))
+        if complete is not None:
+            analysis_by_program[key] = complete
+    if len(analysis_by_program) > 1:
+        ctx["analysisByProgram"] = analysis_by_program
+    if active_key in analysis_by_program:
+        ctx["analysisComplete"] = analysis_by_program[active_key]
 
     checkout_summary = _compact_checkout_summary(open_programs, is_shared=is_shared)
     if checkout_summary:
@@ -375,25 +387,28 @@ def collect_project_context(session_id: str) -> dict[str, Any] | None:
     return ctx
 
 
-def attach_project_context_to_payload(payload: dict[str, Any], session_id: str) -> None:
-    """Attach ``projectContext`` to an error or ad-hoc JSON payload when absent."""
-    if "projectContext" in payload:
-        return
-    ctx = collect_project_context(session_id)
-    if ctx is not None:
-        payload["projectContext"] = ctx
-
-
-# ---------------------------------------------------------------------------
-# Injection helper (for call_tool post-processing)
-# ---------------------------------------------------------------------------
-
 # Tools that should NOT receive the projectContext injection
 # (their response is meta/administrative, not program data).
 _SKIP_CONTEXT_TOOLS: frozenset[str] = frozenset({
     "debuginfo",
     "listtools",
 })
+
+
+def attach_project_context_to_payload(
+    payload: dict[str, Any],
+    session_id: str,
+    *,
+    tool_name_normalized: str = "",
+) -> None:
+    """Attach ``projectContext`` to an error or ad-hoc JSON payload when absent."""
+    if tool_name_normalized in _SKIP_CONTEXT_TOOLS:
+        return
+    if "projectContext" in payload:
+        return
+    ctx = collect_project_context(session_id)
+    if ctx is not None:
+        payload["projectContext"] = ctx
 
 
 def inject_project_context(
@@ -423,12 +438,9 @@ def inject_project_context(
     if not isinstance(data, dict):
         return response_text
 
-    if "projectContext" in data:
-        return response_text
-
-    ctx = collect_project_context(session_id)
-    if ctx is None:
-        return response_text
-
-    data["projectContext"] = ctx
+    attach_project_context_to_payload(
+        data,
+        session_id,
+        tool_name_normalized=tool_name_normalized,
+    )
     return _json.dumps(data)

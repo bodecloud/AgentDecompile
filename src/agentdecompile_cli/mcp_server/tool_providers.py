@@ -44,6 +44,10 @@ from agentdecompile_cli.mcp_utils.program_analysis import (
 
 # iter_items imported lazily in _resolve_function to avoid circular import
 from agentdecompile_cli.mcp_server.response_formatter import render_tool_response  # pyright: ignore[reportMissingImports]
+from agentdecompile_cli.mcp_server.program_metadata import (  # pyright: ignore[reportMissingImports]
+    attach_project_context_to_payload,
+    inject_project_context,
+)
 from agentdecompile_cli.mcp_server.session_context import (  # pyright: ignore[reportMissingImports]
     SESSION_CONTEXTS,
     get_current_mcp_session_id,
@@ -656,6 +660,7 @@ def create_error_response(
     context: dict[str, Any] | None = None,
     next_steps: list[str] | None = None,
     session_id: str | None = None,
+    tool_name_normalized: str = "",
 ) -> list[types.TextContent]:
     """Create a standardized MCP error response with optional actionable metadata."""
     logger.debug("diag.enter %s", "mcp_server/tool_providers.py:create_error_response")
@@ -681,10 +686,12 @@ def create_error_response(
     if next_steps:
         payload["nextSteps"] = next_steps
     try:
-        from agentdecompile_cli.mcp_server.program_metadata import attach_project_context_to_payload
-
         sid = session_id if session_id is not None else get_current_mcp_session_id()
-        attach_project_context_to_payload(payload, sid)
+        attach_project_context_to_payload(
+            payload,
+            sid,
+            tool_name_normalized=tool_name_normalized,
+        )
     except Exception as inject_exc:
         logger.debug("project_context_error_inject_skip: %s", inject_exc)
     return [types.TextContent(type="text", text=_json.dumps(payload))]
@@ -896,7 +903,6 @@ class ToolProvider:
 
             # --- Inject projectContext into successful JSON responses ---
             try:
-                from agentdecompile_cli.mcp_server.program_metadata import inject_project_context
                 from agentdecompile_cli.mcp_server.session_context import get_current_mcp_session_id as _get_sid
 
                 sid = _get_sid()
@@ -935,6 +941,7 @@ class ToolProvider:
                     },
                     extra_context,
                 ),
+                tool_name_normalized=norm_name,
             )
 
     @staticmethod
