@@ -74,7 +74,9 @@ Optional polish from P1-1 review — status:
 
 **Verification:** `uv run pytest -m unit -q --timeout=120` · `gh pr checks 49`
 
-**Merged:** squash `13200d6` on `master` (2026-05-28).
+**Merged:** squash `13200d6` on `master` (2026-05-28). Post-merge closeout docs: squash `049a9f7` (PR #50, 2026-05-28).
+
+**Residual actionable work: none.** Agent-native audit arc complete on `master`.
 
 ## Final LFG verification (2026-05-24)
 
