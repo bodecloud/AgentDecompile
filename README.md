@@ -767,6 +767,27 @@ Use `agentdecompile-cli tool --list-tools` to view the live advertised set from 
 
 Tools that modify project data (e.g. `manage-symbols` rename, `manage-function` rename/set prototype, `manage-comments` set, `manage-structures` create/apply, `apply-data-type`, `manage-bookmarks` set) do **not** overwrite existing *custom* (user-defined) data immediately. If the change would overwrite custom data—such as a symbol name you already set, an existing comment, or a structure that already exists—the tool returns a **conflict** response with a unique `conflictId` and a udiff-style markdown summary. To complete the change you must call **`resolve-modification-conflict`** with that `conflictId` and `resolution=overwrite` (to apply) or `resolution=skip` (to discard). If there is no existing custom data at the target (e.g. a default name like `FUN_004173b0`), the modifying tool succeeds in one step. See [AGENTS.md](AGENTS.md#modification-conflicts-two-step-flow) and [TOOLS_LIST.md](TOOLS_LIST.md#resolve-modification-conflict) for details.
 
+#### Headless MCP vs CodeBrowser (dual-JVM workflow)
+
+AgentDecompile runs a **headless PyGhidra/JVM** for MCP tools. Ghidra **CodeBrowser** is a **separate JVM process**. Both can read and write the same Ghidra project files, but they do **not** share live in-memory state.
+
+```mermaid
+flowchart LR
+  MCP[Headless MCP JVM] -->|mutations| DB[(Project / DomainFile)]
+  GUI[CodeBrowser JVM] -->|reads after reload| DB
+  MCP -->|checkin-program or save| DB
+```
+
+**After MCP mutations, before expecting GUI updates:**
+
+1. **Persist** — call `checkin-program` (shared/versioned projects) or rely on `AGENTDECOMPILE_AUTO_CHECKIN=1` / local `domain_file.save()` for non-versioned projects.
+2. **Reload in CodeBrowser** — use **File → Reload** on the program, re-open the project, or (shared server) **checkout/sync** so CodeBrowser loads the checked-in revision.
+3. **Same workspace** — use the same `.gpr` / project path and preserve MCP `mcp-session-id` across CLI invocations so headless edits target the project you expect.
+
+Mutating tool responses may include **`uiVisibility` / `guiHint`** footers reminding you to check in and reload. There is no live GUI event bus; `/lfg` proves **persisted** parity, not live CodeBrowser refresh.
+
+See also [AGENTS.md](AGENTS.md) (auto-checkin, session id) and [docs/e2e_shared_local_checkout_sync.md](docs/e2e_shared_local_checkout_sync.md) for shared-server checkout/sync.
+
 ### Connection options
 
 | Mode | How to connect | Endpoint / transport |

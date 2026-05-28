@@ -30,9 +30,9 @@ From [2026-05-24 agent-native audit](../audits/2026-05-24-agent-native-audit.md)
 
 | ID | Action |
 |----|--------|
-| P3-1 | Document dual-JVM + checkin-before-GUI-reload in README |
-| P3-2 | Fix or remove **`suggest`** stub |
-| P3-3 | Fail hard on `import-binary` temp ProjectManager fallback |
+| P3-1 | ~~Document dual-JVM + checkin-before-GUI-reload in README~~ **Done** (PR #49) |
+| P3-2 | ~~Fix or remove **`suggest`** stub~~ **Done** (PR #49) |
+| P3-3 | ~~Fail hard on `import-binary` temp ProjectManager fallback~~ **Done** (PR #49) |
 
 ## Ship gate (audit plan R4)
 
