@@ -58,6 +58,22 @@ Optional polish from P1-1 review — status:
 - [x] **Merge-ready** — all agent-implementable gates satisfied (2026-05-24)
 - [ ] Merge to `master` (human review)
 
+## PR #49 summary (merge reviewer)
+
+**Branch:** `impl/agent-native-audit-c2bc` · **PR:** https://github.com/bolabaden/AgentDecompile/pull/49
+
+| Area | Delivered |
+|------|-----------|
+| Audit | `docs/audits/2026-05-24-agent-native-audit.md` (~74% agent-native score) |
+| P1 | `projectContext` enrichment, `prompts/get`, UI hints, proxy project-path header |
+| P2 | Enum CRUD, symbol delete, curated surface, `/help`, `/capabilities`, COBRA_CASE + action-scoped hints |
+| P3 | Dual-JVM docs, `suggest` stub, import-binary project gate |
+| CI | Dynamic advertised-tool count (56); unit + headless green |
+
+**Verification:** `uv run pytest -m unit -q --timeout=120` · `gh pr checks 49`
+
+**Human gate:** squash-merge to `master` when approved.
+
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 
 Follow-up polish after P2-1 ship (alias handlers + conflict overwrite addressed in review pass):

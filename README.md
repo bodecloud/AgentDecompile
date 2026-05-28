@@ -13,7 +13,7 @@ flowchart TD
   B --> D[AgentDecompile runtime]
   C --> D
   D --> E[PyGhidra and Ghidra projects]
-  D --> F[59 canonical tools and 3 resources]
+  D --> F[60 canonical tools and 3 resources]
 ```
 
 ## Session-Validated Commands
@@ -750,7 +750,7 @@ On Windows use forward slashes or escaped backslashes in paths.
 
 ### API and tools (overview)
 
-AgentDecompile exposes 59 canonical MCP tools (see `src/agentdecompile_cli/registry.py`) and 3 resources:
+AgentDecompile exposes 60 canonical MCP tools (see `src/agentdecompile_cli/registry.py`) and 3 resources:
 
 - **56 tools** are advertised by default: every non-GUI canonical tool.
 - Compatibility aliases remain callable but are hidden by default. Use `AGENT_DECOMPILE_TOOL_SURFACE=curated` for the smaller curated surface.
