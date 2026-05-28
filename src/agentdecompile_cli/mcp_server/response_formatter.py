@@ -1248,6 +1248,13 @@ def _render_symbols(data: dict[str, Any]) -> str:
             lines.append(_md_bold_kv("Label", _md_code_inline(data.get("label", ""))))
         return "\n".join(lines)
 
+    if mode == "delete_label":
+        lines.append(_md_heading(2, "Label Deleted"))
+        lines.append("")
+        lines.append(_md_bold_kv("Address", _md_code_inline(data.get("address", ""))))
+        lines.append(_md_bold_kv("Label", _md_code_inline(data.get("label", ""))))
+        return "\n".join(lines)
+
     if mode == "rename_data":
         lines.append(_md_heading(2, "Data Renamed"))
         lines.append("")
