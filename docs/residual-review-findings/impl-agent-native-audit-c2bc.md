@@ -56,7 +56,7 @@ Optional polish from P1-1 review — status:
 - [x] Advertised-tool count test/docs aligned (56 tools after `manage-enums`)
 - [x] P2-4 `/capabilities` discovery command
 - [x] **Merge-ready** — all agent-implementable gates satisfied (2026-05-24)
-- [ ] Merge to `master` (human review)
+- [x] Merge to `master` (squash `13200d6`, PR #49, 2026-05-28)
 
 ## PR #49 summary (merge reviewer)
 
@@ -80,7 +80,7 @@ Optional polish from P1-1 review — status:
 - [x] Unit suite green locally
 - [x] PR #49 CI green on required checks (unit + headless)
 
-**Branch HEAD (merge traceability):** `90416fb` · **Solutions:** [agent-native-mcp-patterns.md](../solutions/architecture-patterns/agent-native-mcp-patterns.md)
+**Branch HEAD (merge traceability):** `13200d6` (squash merge) · **Solutions:** [agent-native-mcp-patterns.md](../solutions/architecture-patterns/agent-native-mcp-patterns.md)
 
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 
