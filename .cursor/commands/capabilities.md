@@ -13,7 +13,7 @@ Structured inventory of what agents can do with AgentDecompile. For workflow gui
 
 ## Advertised MCP tools (56)
 
-Canonical catalog: [TOOLS_LIST.md](../../TOOLS_LIST.md) (59 canonical; 56 advertised + 4 GUI-only hidden).
+Canonical catalog: [TOOLS_LIST.md](../../TOOLS_LIST.md) (60 canonical; 56 advertised + 4 GUI-only hidden).
 
 | Category | Tools |
 |----------|-------|
@@ -56,7 +56,7 @@ Fetch rendered content with **`prompts/get`** (substitutes active program when `
 | `AGENTDECOMPILE_AUTO_MATCH_PROPAGATE` | Propagate renames/comments to other open programs |
 | `AGENTDECOMPILE_AUTO_MATCH_TARGET_PATHS` | Comma-separated propagation targets |
 | `AGENTDECOMPILE_PROJECT_PATH` | Proxy: forward project path header |
-| `AGENTDECOMPILE_TOOL_SURFACE` | `curated` (default) or `full` |
+| `AGENTDECOMPILE_TOOL_SURFACE` | `full` (default) or `curated` |
 
 ## Response context (passive)
 
