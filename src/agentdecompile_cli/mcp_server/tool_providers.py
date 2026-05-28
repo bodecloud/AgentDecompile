@@ -655,6 +655,7 @@ def create_error_response(
     *,
     context: dict[str, Any] | None = None,
     next_steps: list[str] | None = None,
+    session_id: str | None = None,
 ) -> list[types.TextContent]:
     """Create a standardized MCP error response with optional actionable metadata."""
     logger.debug("diag.enter %s", "mcp_server/tool_providers.py:create_error_response")
@@ -679,6 +680,13 @@ def create_error_response(
                 payload[key] = value
     if next_steps:
         payload["nextSteps"] = next_steps
+    try:
+        from agentdecompile_cli.mcp_server.program_metadata import attach_project_context_to_payload
+
+        sid = session_id if session_id is not None else get_current_mcp_session_id()
+        attach_project_context_to_payload(payload, sid)
+    except Exception as inject_exc:
+        logger.debug("project_context_error_inject_skip: %s", inject_exc)
     return [types.TextContent(type="text", text=_json.dumps(payload))]
 
 

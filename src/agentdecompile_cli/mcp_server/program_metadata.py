@@ -236,6 +236,79 @@ def collect_program_summary(program_info: ProgramInfo) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _analysis_complete_for_info(program_info: Any) -> bool | None:
+    if program_info is None:
+        return None
+    value = getattr(program_info, "ghidra_analysis_complete", None)
+    if value is None:
+        return None
+    return bool(value)
+
+
+def _resolve_domain_file(program_info: Any) -> Any | None:
+    df = getattr(program_info, "domain_file", None)
+    if df is not None:
+        return df
+    program = getattr(program_info, "program", None)
+    if program is None:
+        return None
+    try:
+        return program.getDomainFile()
+    except Exception:
+        return None
+
+
+def _compact_checkout_summary(
+    open_programs: dict[str, Any],
+    *,
+    is_shared: bool,
+) -> dict[str, Any] | None:
+    """Aggregate checkout/versioning flags for open programs (shared mode only)."""
+    if not is_shared or not open_programs:
+        return None
+
+    checked_out = 0
+    modified = 0
+    can_checkin = 0
+    programs: list[dict[str, Any]] = []
+
+    for path, info in open_programs.items():
+        df = _resolve_domain_file(info)
+        if df is None:
+            continue
+        entry: dict[str, Any] = {"program": str(path)}
+        try:
+            is_checked_out = bool(df.isCheckedOut())
+            is_modified = bool(df.modifiedSinceCheckout())
+            can_ci = bool(df.canCheckin())
+        except Exception:
+            continue
+
+        if is_checked_out:
+            checked_out += 1
+            entry["isCheckedOut"] = True
+        if is_modified:
+            modified += 1
+            entry["modifiedSinceCheckout"] = True
+        if can_ci:
+            can_checkin += 1
+            entry["canCheckin"] = True
+        if len(entry) > 1:
+            programs.append(entry)
+
+    if checked_out == 0 and modified == 0 and can_checkin == 0:
+        return None
+
+    summary: dict[str, Any] = {
+        "checkedOutCount": checked_out,
+        "modifiedCount": modified,
+        "canCheckinCount": can_checkin,
+    }
+    if programs:
+        summary["programs"] = programs
+    return summary
+
+
 def collect_project_context(session_id: str) -> dict[str, Any] | None:
     """Build a compact project-context dict for the given session.
 
@@ -281,7 +354,34 @@ def collect_project_context(session_id: str) -> dict[str, Any] | None:
     if active_key:
         ctx["activeProgram"] = active_key
 
+    if active_key and active_key in open_programs:
+        analysis_complete = _analysis_complete_for_info(open_programs[active_key])
+        if analysis_complete is not None:
+            ctx["analysisComplete"] = analysis_complete
+
+    if len(open_program_keys) > 1:
+        analysis_by_program: dict[str, bool] = {}
+        for key in open_program_keys:
+            complete = _analysis_complete_for_info(open_programs.get(key))
+            if complete is not None:
+                analysis_by_program[key] = complete
+        if analysis_by_program:
+            ctx["analysisByProgram"] = analysis_by_program
+
+    checkout_summary = _compact_checkout_summary(open_programs, is_shared=is_shared)
+    if checkout_summary:
+        ctx["checkoutSummary"] = checkout_summary
+
     return ctx
+
+
+def attach_project_context_to_payload(payload: dict[str, Any], session_id: str) -> None:
+    """Attach ``projectContext`` to an error or ad-hoc JSON payload when absent."""
+    if "projectContext" in payload:
+        return
+    ctx = collect_project_context(session_id)
+    if ctx is not None:
+        payload["projectContext"] = ctx
 
 
 # ---------------------------------------------------------------------------
