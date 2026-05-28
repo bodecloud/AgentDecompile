@@ -1,7 +1,8 @@
 ---
 title: LFG — PR #49 merge and post-merge closeout
 type: chore
-status: active
+status: completed
+merge_commit: 13200d6ae3cee00d0150f66bec6b42fcb51059d2
 date: 2026-05-24
 branch: impl/agent-native-audit-c2bc
 pr: https://github.com/bolabaden/AgentDecompile/pull/49
