@@ -55,3 +55,5 @@ flowchart TD
 ```bash
 uv run pytest -m unit -q --timeout=120
 ```
+
+**Result (2026-05-28):** 124 passed on `master` at `049a9f7`.
