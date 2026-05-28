@@ -4,6 +4,7 @@ type: feat
 status: implemented
 date: 2026-05-28
 branch: impl/lfg-nightly-ci-c2bc
+pr: https://github.com/bolabaden/AgentDecompile/pull/53
 origin: docs/residual-review-findings/impl-blocking-analysis-gate-c2bc.md
 ---
 
@@ -13,7 +14,7 @@ origin: docs/residual-review-findings/impl-blocking-analysis-gate-c2bc.md
 
 Close the remaining **P3** downstream item: run canonical `/lfg` in CI or nightly. Add a GitHub Actions workflow that runs `tests/test_lfg_e2e.py -m lfg` with `LFG_RUN=1` on a schedule and manual dispatch, using self-managed Ghidra Server + MCP on Linux CI (see `scripts/lfg_validation.py`).
 
-**Pointers:** Residual [impl-blocking-analysis-gate-c2bc.md](../residual-review-findings/impl-blocking-analysis-gate-c2bc.md) §Still open; existing smoke in unit CI via `@pytest.mark.unit` tests in `tests/test_lfg_e2e.py`.
+**Pointers:** Residual [impl-blocking-analysis-gate-c2bc.md](../residual-review-findings/impl-blocking-analysis-gate-c2bc.md) §Closed (2026-05-28 LFG); existing smoke in unit CI via `@pytest.mark.unit` tests in `tests/test_lfg_e2e.py`.
 
 ## Flow
 

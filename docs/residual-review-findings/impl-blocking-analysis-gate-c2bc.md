@@ -7,6 +7,7 @@
 
 **PR #44:** [#44](https://github.com/bolabaden/AgentDecompile/pull/44) — **merged** to `master` as `7359c6a` (2026-05-27, squash)  
 **PR #45:** [#45](https://github.com/bolabaden/AgentDecompile/pull/45) — **merged** to `master` as `00cfca2` (post-merge `program_analysis.__all__` + docs)  
+**PR #53:** [#53](https://github.com/bolabaden/AgentDecompile/pull/53) — **open** (`lfg-nightly.yml`; merge SHA pending squash merge)  
 **LFG pass:** [docs/plans/2026-05-24-lfg-strategy-doc-code-review.md](../plans/2026-05-24-lfg-strategy-doc-code-review.md)  
 **Follow-up:** `STRATEGY.md` and doc-only commits land via `impl/post-merge-strategy-docs-c2bc`
 
@@ -41,7 +42,7 @@ _(none — P3 e2e `/lfg` CI covered by `lfg-nightly.yml`)_
 
 ### Closed (2026-05-28 LFG)
 
-- **P3** | e2e | Canonical `/lfg` in CI/nightly — [`.github/workflows/lfg-nightly.yml`](../../.github/workflows/lfg-nightly.yml) (weekly + `workflow_dispatch`; `LFG_RUN=1 pytest -m lfg`)
+- **P3** | e2e | Canonical `/lfg` in CI/nightly — PR [#53](https://github.com/bolabaden/AgentDecompile/pull/53); [`.github/workflows/lfg-nightly.yml`](../../.github/workflows/lfg-nightly.yml) (weekly + `workflow_dispatch`; `LFG_RUN=1 pytest -m lfg`; merge SHA after squash)
 
 ### Closed (2026-05-24 LFG)
 
