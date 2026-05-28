@@ -1,0 +1,70 @@
+from __future__ import annotations
+
+import pytest
+
+from agentdecompile_cli.mcp_server.providers.enums import (
+    EnumToolProvider,
+    is_cobra_case,
+    parse_enum_member_specs,
+)
+from agentdecompile_cli.registry import Tool, resolve_tool_name
+
+
+@pytest.mark.unit
+def test_manage_enums_schema_includes_all_modes() -> None:
+    provider = EnumToolProvider()
+    tools = provider.list_tools()
+    manage = next(tool for tool in tools if tool.name == "manage-enums")
+    mode_enum = manage.inputSchema["properties"]["mode"]["enum"]
+    assert mode_enum == [
+        "list",
+        "info",
+        "create",
+        "add_member",
+        "edit_member",
+        "remove_member",
+        "delete",
+    ]
+
+
+@pytest.mark.unit
+def test_manage_enums_handler_is_registered() -> None:
+    provider = EnumToolProvider()
+    assert "manageenums" in provider.HANDLERS
+
+
+@pytest.mark.unit
+def test_manage_enums_aliases_resolve() -> None:
+    for alias in ("create-enum", "edit-enum", "list-enums", "delete-enum", "get-enum-info"):
+        assert resolve_tool_name(alias) == Tool.MANAGE_ENUMS.value
+
+
+@pytest.mark.unit
+def test_parse_enum_member_specs_from_batch() -> None:
+    specs = parse_enum_member_specs(
+        [
+            {"name": "FLAG_A", "value": 0},
+            {"memberName": "FLAG_B", "memberValue": 1},
+        ],
+    )
+    assert specs == [("FLAG_A", 0), ("FLAG_B", 1)]
+
+
+@pytest.mark.unit
+def test_parse_enum_member_specs_single_pair() -> None:
+    specs = parse_enum_member_specs(None, single_name="ONLY_ONE", single_value=42)
+    assert specs == [("ONLY_ONE", 42)]
+
+
+@pytest.mark.unit
+def test_parse_enum_member_specs_requires_value() -> None:
+    with pytest.raises(ValueError, match="missing integer value"):
+        parse_enum_member_specs([{"name": "BAD"}])
+
+
+@pytest.mark.unit
+def test_is_cobra_case_accepts_screaming_snake() -> None:
+    assert is_cobra_case("SAVE_SLOT_EMPTY")
+    assert is_cobra_case("A")
+    assert not is_cobra_case("saveSlot")
+    assert not is_cobra_case("1BAD")

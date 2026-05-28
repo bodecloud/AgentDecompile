@@ -459,6 +459,7 @@ _MUTATING_UI_HINT_TOOLS: frozenset[str] = frozenset(
         "managefunction",
         "managecomments",
         "managestructures",
+        "manageenums",
         "applydatatype",
         "managebookmarks",
         "managefunctiontags",
