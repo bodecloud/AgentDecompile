@@ -1,12 +1,12 @@
 ---
 title: LFG — PR #49 final verification and .cursorrules drift
 type: fix
-status: active
+status: done
 date: 2026-05-24
 branch: impl/agent-native-audit-c2bc
 pr: https://github.com/bolabaden/AgentDecompile/pull/49
 origin: docs/residual-review-findings/impl-agent-native-audit-c2bc.md
-commit: 2da1893
+commit: 32bcb76
 ---
 
 # LFG — PR #49 final verification and .cursorrules drift
