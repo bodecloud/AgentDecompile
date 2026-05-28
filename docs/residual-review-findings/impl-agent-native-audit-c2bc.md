@@ -23,7 +23,7 @@ From [2026-05-24 agent-native audit](../audits/2026-05-24-agent-native-audit.md)
 |----|------|--------|
 | P2-1 | `manage-data-types` / new tool | ~~Enum CRUD (`manage-enums` or enum modes)~~ **Done** (PR #49) |
 | P2-2 | `manage-symbols` | ~~`delete_label` / remove label mode~~ **Done** (PR #49) |
-| P2-3 | Curated tool surface | Advertise list/search primitives; demote `search-everything` / `get-function` to `full` |
+| P2-3 | Curated tool surface | ~~Advertise list/search primitives; demote `search-everything` / `get-function` to `full`~~ **Done** (PR #49) |
 | P2-4 | Discovery | ~~`.cursor/commands/help.md`~~ **Done**; `/capabilities` slash command optional |
 
 ## P3 — docs / hygiene
@@ -44,7 +44,7 @@ From [2026-05-24 agent-native audit](../audits/2026-05-24-agent-native-audit.md)
 
 Optional polish from P1-1 review — status:
 
-- **Low** | `response_formatter.py:3072` | Render `analysisComplete` / `checkoutSummary` in markdown Project Context footer — open
+- ~~**Low** | `response_formatter.py:3072` | Render `analysisComplete` / `checkoutSummary` in markdown Project Context footer~~ **Done** (PR #49)
 - ~~**Low** | `tests/test_project_context.py` | Add unit test: error response omits `projectContext` when session has no programs~~ **Done**
 - ~~**Low** | `.cursor/commands/help.md` | Document `analysisByProgram` field~~ **Done**
 - ~~**Info** | `docs/audits/2026-05-24-agent-native-audit.md:120` | Update Context Injection audit rows post-P1-1~~ **Done**

@@ -963,8 +963,9 @@ _add_builtin_param_aliases()
 # Default advertised surface (MCP + CLI) is blacklist-driven.
 # All tools remain accepted via normalize/resolve/dispatch regardless of advertisement.
 # New tools are auto-advertised unless added to this hidden set.
-# Comments, bookmarks, function rename/prototype, function-tags, create-label, and manage-symbols
-# (create_label, rename_data) are advertised by default for annotation and organization.
+# Curated surface (AGENTDECOMPILE_TOOL_SURFACE=curated) hides these; full/legacy still advertise them.
+# List/search primitives (list-functions, search-code, etc.) stay off this set so curated agents see them.
+# Workflow routers (search-everything, get-function) belong here so curated surface demotes them to full.
 _DEFAULT_HIDDEN_TOOLS: frozenset[Tool] = frozenset(
     {
         Tool.ANALYZE_DATA_FLOW,
@@ -972,14 +973,12 @@ _DEFAULT_HIDDEN_TOOLS: frozenset[Tool] = frozenset(
         Tool.DELETE_PROJECT_BINARY,
         Tool.GEN_CALLGRAPH,
         Tool.GET_DATA,
+        Tool.GET_FUNCTION,
         Tool.GET_FUNCTIONS,
-        Tool.LIST_EXPORTS,
         Tool.LIST_CROSS_REFERENCES,
         Tool.LIST_FALLBACK_PROJECTS,
-        Tool.LIST_FUNCTIONS,
-        Tool.LIST_IMPORTS,
-        Tool.LIST_STRINGS,
         Tool.REINTEGRATE_FALLBACK_PROJECTS,
+        Tool.SEARCH_EVERYTHING,
         Tool.SUGGEST,
     },
 )
