@@ -52,7 +52,8 @@ Optional polish from P1-1 review — status:
 ## PR #49 ship gate
 
 - [x] CI green (unit, headless, CodeQL)
-- [x] P1-1 + simplification on branch
+- [x] P1–P3 + P2-1 polish on branch
+- [x] Advertised-tool count test/docs aligned (56 tools after `manage-enums`)
 - [ ] Merge to `master` (human review)
 
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)

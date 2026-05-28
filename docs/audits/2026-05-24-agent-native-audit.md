@@ -170,16 +170,14 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 | Structures | ✅ | ✅ | ✅ | ✅ | Full |
 | Project files | ✅ | ✅ | ✅ | ✅ | Full |
 | VC checkout state | ✅ | ✅ | ✅ | ✅ | Full |
-| Symbols/labels | ✅ | ✅ | ⚠️ | ❌ | 3/4 |
+| Symbols/labels | ✅ | ✅ | ✅ | ✅ | 4/4 |
 | Function tags | ✅ | ✅ | ⚠️ | ✅ | 3/4 |
 | Data types (catalog) | ❌ | ✅ | ⚠️ | ❌ | 2/4 |
 | Strings | ❌ | ✅ | ❌ | ❌ | 1/4 |
-| Enums | ❌ | ❌ | ❌ | ❌ | 0/4 |
+| Enums | ✅ | ✅ | ✅ | ✅ | 4/4 |
 
 ### Top gaps
 
-- **Enum CRUD** — documented in AGENTS.md; no MCP tool.
-- **Symbol delete** — no `remove_label` mode on `manage-symbols`.
 - **Variable rename** — registry params exist; handlers missing on `manage-function`.
 
 ---
@@ -200,9 +198,9 @@ AgentDecompile uses a **headless MCP JVM** separate from CodeBrowser. Mutations 
 
 ### Recommendations
 
-1. Add **`uiVisibility`** / `guiHint` on mutating tool responses.
+1. ~~Add **`uiVisibility`** / `guiHint` on mutating tool responses.~~ **Done (PR #49)**
 2. Surface auto-checkin in response footer when env enabled.
-3. Document dual-JVM model in README.
+3. ~~Document dual-JVM model in README.~~ **Done (PR #49)**
 
 ---
 
@@ -273,15 +271,15 @@ The canonical **`/lfg`** proof (`.cursor/commands/lfg.md`, `scripts/lfg_validati
 | Priority | Action | Principle | Effort |
 |----------|--------|-----------|--------|
 | 1 | ~~Extend `projectContext` with `analysisComplete`, checkout summary, errors~~ **Done (PR #49)** | Context injection | Low |
-| 2 | Implement MCP **`prompts/get`** | Discovery + prompt-native | Medium |
-| 3 | Add **`uiVisibility` / guiHint** on mutating tools | UI integration | Low |
-| 4 | Forward **`x-agentdecompile-project-path`** on proxy | Shared workspace | Low |
-| 5 | Add **`manage-enums`** or enum modes on `manage-data-types` | CRUD | Medium |
-| 6 | Add **`delete_label`** on `manage-symbols` | CRUD | Low |
+| 2 | ~~Implement MCP **`prompts/get`**~~ **Done (PR #49)** | Discovery + prompt-native | Medium |
+| 3 | ~~Add **`uiVisibility` / guiHint** on mutating tools~~ **Done (PR #49)** | UI integration | Low |
+| 4 | ~~Forward **`x-agentdecompile-project-path`** on proxy~~ **Done (PR #49)** | Shared workspace | Low |
+| 5 | ~~Add **`manage-enums`** or enum modes on `manage-data-types`~~ **Done (PR #49)** | CRUD | Medium |
+| 6 | ~~Add **`delete_label`** on `manage-symbols`~~ **Done (PR #49)** | CRUD | Low |
 | 7 | ~~Add **`.cursor/commands/help.md`** capability discovery~~ **Done (PR #49)** | Discovery | Low |
-| 8 | Invert **curated** surface: advertise list/search primitives | Tools as primitives | Medium |
-| 9 | Document **dual-JVM + checkin-before-GUI-reload** workflow | UI integration | Low |
-| 10 | Fix or remove **`suggest`** stub | Prompt-native clarity | Low |
+| 8 | ~~Invert **curated** surface: advertise list/search primitives~~ **Done (PR #49)** | Tools as primitives | Medium |
+| 9 | ~~Document **dual-JVM + checkin-before-GUI-reload** workflow~~ **Done (PR #49)** | UI integration | Low |
+| 10 | ~~Fix or remove **`suggest`** stub~~ **Done (PR #49)** | Prompt-native clarity | Low |
 
 ---
 
@@ -291,7 +289,7 @@ The canonical **`/lfg`** proof (`.cursor/commands/lfg.md`, `scripts/lfg_validati
 2. **Shared persisted workspace** — Agents mutate the same Ghidra Program DB as the GUI after checkin/save.
 3. **TOOLS_LIST.md + OpenAPI** — Exhaustive capability reference and live HTTP docs.
 4. **Conflict two-step flow** — `resolve-modification-conflict` enables safe agent writes.
-5. **Nine RE workflow prompts** — Prompt-native playbooks for scout/dive/bridge patterns (content ready; delivery via `prompts/get` pending).
+5. **Nine RE workflow prompts** — Prompt-native playbooks for scout/dive/bridge patterns; delivered via **`prompts/get`** (PR #49).
 
 ---
 
