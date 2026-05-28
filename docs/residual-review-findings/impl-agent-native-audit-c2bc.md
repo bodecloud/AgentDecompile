@@ -80,7 +80,7 @@ Optional polish from P1-1 review — status:
 - [x] Unit suite green locally
 - [x] PR #49 CI green on required checks (unit + headless)
 
-**Branch HEAD (merge traceability):** `bf869bf` · **Solutions:** [agent-native-mcp-patterns.md](../solutions/architecture-patterns/agent-native-mcp-patterns.md)
+**Branch HEAD (merge traceability):** `90416fb` · **Solutions:** [agent-native-mcp-patterns.md](../solutions/architecture-patterns/agent-native-mcp-patterns.md)
 
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 
