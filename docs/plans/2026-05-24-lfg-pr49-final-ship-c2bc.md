@@ -1,7 +1,7 @@
 ---
 title: LFG — PR #49 final ship (CI fix + doc closeout)
 type: fix
-status: active
+status: completed
 date: 2026-05-24
 branch: impl/agent-native-audit-c2bc
 pr: https://github.com/bolabaden/AgentDecompile/pull/49
