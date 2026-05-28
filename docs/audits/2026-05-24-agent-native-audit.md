@@ -34,13 +34,13 @@ flowchart TD
 | Action Parity | 40/41 headless outcomes | 98% | ✅ |
 | Tools as Primitives | 35/55 (strict atomic: 21/55) | 64% (38% strict) | ⚠️ |
 | Context Injection | 7/7 context types | 100% | ✅ |
-| Shared Workspace | 10/14 stores shared | 71% (6/6 persisted RE data) | ⚠️ |
-| CRUD Completeness | 7/12 entities full CRUD | 58% | ⚠️ |
+| Shared Workspace | 12/14 stores shared | 86% (6/6 persisted RE data) | ✅ |
+| CRUD Completeness | 9/12 entities full CRUD | 75% | ⚠️ |
 | UI Integration | 18/23 deferred GUI visibility | 78% deferred; 0% live | ⚠️ |
 | Capability Discovery | 5/7 mechanisms | 71% | ⚠️ |
 | Prompt-Native Features | 1/6 audited features | 17% | ❌ |
 
-**Overall agent-native score (mean of percentages): ~72%**
+**Overall agent-native score (mean of percentages): ~74%**
 
 ### Status legend
 
@@ -133,33 +133,31 @@ flowchart TD
 
 ## Shared Workspace Audit
 
-**Score: 10/14 stores shared (71%)** — **6/6 persisted RE data stores shared (100%)**.
+**Score: 12/14 stores shared (86%)** — **6/6 persisted RE data stores shared (100%)**.
 
 ### Shared ✅
 
-Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_file`, CLI `mcp-session-id` persistence, proxy session forwarding.
+Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_file`, CLI `mcp-session-id` persistence, proxy session forwarding, proxy **`X-AgentDecompile-Project-Path`** forwarding.
 
 ### Partial / isolated ⚠️❌
 
 | Store | Notes |
 |-------|-------|
 | `SESSION_CONTEXTS` | Process-local index, not a data fork |
-| Proxy `X-AgentDecompile-Project-Path` | Not in proxy forward allowlist |
 | ChromaDB index | Optional; derived cache |
 | LFG `--manage-mcp` workspace | Intentional test sandbox |
-| `import-binary` temp ProjectManager | Silent non-persistence fallback |
 
 ### Recommendations
 
-1. Forward **`x-agentdecompile-project-path`** on proxy.
-2. Fail hard on import-binary temp ProjectManager fallback.
+1. ~~Forward **`x-agentdecompile-project-path`** on proxy.~~ **Done (PR #49)**
+2. ~~Fail hard on import-binary temp ProjectManager fallback.~~ **Done (PR #49)**
 3. Document one-workspace checklist (same `.gpr`, session id, checkin before GUI reload).
 
 ---
 
 ## CRUD Completeness Audit
 
-**Score: 7/12 entities with full CRUD (58%)**
+**Score: 9/12 entities with full CRUD (75%)**
 
 | Entity | C | R | U | D | Score |
 |--------|---|---|---|---|-------|
@@ -170,11 +168,11 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 | Structures | ✅ | ✅ | ✅ | ✅ | Full |
 | Project files | ✅ | ✅ | ✅ | ✅ | Full |
 | VC checkout state | ✅ | ✅ | ✅ | ✅ | Full |
-| Symbols/labels | ✅ | ✅ | ✅ | ✅ | 4/4 |
+| Symbols/labels | ✅ | ✅ | ✅ | ✅ | Full |
 | Function tags | ✅ | ✅ | ⚠️ | ✅ | 3/4 |
 | Data types (catalog) | ❌ | ✅ | ⚠️ | ❌ | 2/4 |
 | Strings | ❌ | ✅ | ❌ | ❌ | 1/4 |
-| Enums | ✅ | ✅ | ✅ | ✅ | 4/4 |
+| Enums | ✅ | ✅ | ✅ | ✅ | Full |
 
 ### Top gaps
 
@@ -220,8 +218,8 @@ AgentDecompile uses a **headless MCP JVM** separate from CodeBrowser. Mutations 
 
 ### Recommendations
 
-1. Add `.cursor/commands/help.md` or `/capabilities` discovery command.
-2. Implement MCP **`prompts/get`**.
+1. ~~Add `.cursor/commands/help.md` or `/capabilities` discovery command.~~ **Done (PR #49)** — `/capabilities` slash command optional.
+2. ~~Implement MCP **`prompts/get`**.~~ **Done (PR #49)**
 3. Proactive empty-session hints on `get-current-program` / `list-project-files`.
 
 ---
@@ -237,7 +235,7 @@ AgentDecompile uses a **headless MCP JVM** separate from CodeBrowser. Mutations 
 | Auto-checkin | Code |
 | Auto-match-propagate | Code |
 | `search-everything` routing | Code |
-| `suggest` tool | Code stub |
+| `suggest` tool | Explicit not-implemented stub (legacy types only) |
 
 RE **workflow playbooks** are prompt-native; **server middleware** is correctly code-native for safety and persistence.
 
