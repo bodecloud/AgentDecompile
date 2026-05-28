@@ -1,6 +1,6 @@
 ---
 title: LFG — ship test_lfg_e2e simplification (PR)
-status: active
+status: completed
 created: 2026-05-24
 branch: impl/simplify-test-lfg-e2e-c2bc
 base: master @ a9a24ef
