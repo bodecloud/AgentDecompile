@@ -12,7 +12,7 @@
 
 ## Residual Review Findings
 
-**Residual actionable work: none.** (P3 post-merge / docs-only items below.)
+**Residual actionable work: none.** (P3 e2e `/lfg` CI closed via `lfg-nightly.yml`; see below.)
 
 ### Closed in branch (2026-05-24 review pass)
 
@@ -37,7 +37,11 @@ After merge: `tests/test_lfg_e2e.py` provides fast smoke (no `lfg` marker) and o
 
 ### Still open (downstream)
 
-- **P3** | e2e | Run canonical `/lfg` in CI or nightly (`LFG_RUN=1 pytest -m lfg` or `scripts/lfg_validation.py --manage-mcp`)
+_(none — P3 e2e `/lfg` CI covered by `lfg-nightly.yml`)_
+
+### Closed (2026-05-28 LFG)
+
+- **P3** | e2e | Canonical `/lfg` in CI/nightly — [`.github/workflows/lfg-nightly.yml`](../../.github/workflows/lfg-nightly.yml) (weekly + `workflow_dispatch`; `LFG_RUN=1 pytest -m lfg`)
 
 ### Closed (2026-05-24 LFG)
 
