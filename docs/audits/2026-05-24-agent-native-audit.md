@@ -214,11 +214,11 @@ AgentDecompile uses a **headless MCP JVM** separate from CodeBrowser. Mutations 
 | Agent self-describes | ⚠️ per-tool; no initialize preamble |
 | Suggested prompts | ✅ 9 MCP prompts; **`prompts/get` implemented** (session substitution) |
 | Empty state | ⚠️ reactive errors only |
-| Slash commands | ❌ only `/lfg` (proof, not discovery) |
+| Slash commands | ✅ `/help`, `/capabilities`, `/lfg` (proof) |
 
 ### Recommendations
 
-1. ~~Add `.cursor/commands/help.md` or `/capabilities` discovery command.~~ **Done (PR #49)** — `/capabilities` slash command optional.
+1. ~~Add `.cursor/commands/help.md` or `/capabilities` discovery command.~~ **Done (PR #49)** — `/help` and `/capabilities`.
 2. ~~Implement MCP **`prompts/get`**.~~ **Done (PR #49)**
 3. Proactive empty-session hints on `get-current-program` / `list-project-files`.
 

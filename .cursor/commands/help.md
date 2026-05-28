@@ -47,6 +47,7 @@ See [TOOLS_LIST.md](../../TOOLS_LIST.md) for the canonical 49-tool catalog.
 
 ## Related docs
 
+- [`/capabilities`](./capabilities.md) — Full tool/prompt/env inventory
 - [README.md](../../README.md) — User overview
 - [AGENTS.md](../../AGENTS.md) — Cloud agent setup
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) — Development workflow

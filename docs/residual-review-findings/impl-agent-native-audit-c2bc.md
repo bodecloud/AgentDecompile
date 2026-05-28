@@ -24,7 +24,7 @@ From [2026-05-24 agent-native audit](../audits/2026-05-24-agent-native-audit.md)
 | P2-1 | `manage-data-types` / new tool | ~~Enum CRUD (`manage-enums` or enum modes)~~ **Done** (PR #49) |
 | P2-2 | `manage-symbols` | ~~`delete_label` / remove label mode~~ **Done** (PR #49) |
 | P2-3 | Curated tool surface | ~~Advertise list/search primitives; demote `search-everything` / `get-function` to `full`~~ **Done** (PR #49) |
-| P2-4 | Discovery | ~~`.cursor/commands/help.md`~~ **Done**; `/capabilities` slash command optional |
+| P2-4 | Discovery | ~~`.cursor/commands/help.md`~~ **Done**; ~~`/capabilities` slash command~~ **Done** (PR #49) |
 
 ## P3 — docs / hygiene
 
@@ -54,6 +54,8 @@ Optional polish from P1-1 review — status:
 - [x] CI green (unit, headless, CodeQL)
 - [x] P1–P3 + P2-1 polish on branch
 - [x] Advertised-tool count test/docs aligned (56 tools after `manage-enums`)
+- [x] P2-4 `/capabilities` discovery command
+- [x] **Merge-ready** — all agent-implementable gates satisfied (2026-05-24)
 - [ ] Merge to `master` (human review)
 
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
