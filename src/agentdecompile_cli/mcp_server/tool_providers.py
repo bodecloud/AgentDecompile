@@ -48,6 +48,7 @@ from agentdecompile_cli.mcp_server.program_metadata import (  # pyright: ignore[
     attach_project_context_to_payload,
     inject_project_context,
     inject_ui_hints,
+    payload_has_mutating_action,
 )
 from agentdecompile_cli.mcp_server.session_context import (  # pyright: ignore[reportMissingImports]
     SESSION_CONTEXTS,
@@ -2753,6 +2754,9 @@ class ToolProviderManager:
                 tool_success = parsed.get("success", True) is not False and parsed.get("modificationConflict") is not True and "error" not in (parsed.get("error") or "")
             except Exception:
                 tool_success = False
+            if tool_success:
+                if not payload_has_mutating_action(norm_name, parsed):
+                    tool_success = False
             if tool_success:
                 try:
                     await self.call_tool(

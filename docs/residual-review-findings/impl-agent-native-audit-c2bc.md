@@ -59,6 +59,6 @@ Optional polish from P1-1 review — status:
 
 Follow-up polish after P2-1 ship (alias handlers + conflict overwrite addressed in review pass):
 
-- **Low** | `src/agentdecompile_cli/mcp_server/providers/enums.py` | Enforce COBRA_CASE at runtime via `is_cobra_case()` on create/add/edit_member
-- **Low** | `src/agentdecompile_cli/mcp_server/program_metadata.py` | Scope UI hints / auto-checkin to mutating enum modes via payload `action`
-- **Low** | `tests/test_manage_enums.py` | Add formatter/conflict-response coverage with mocked handlers
+- ~~**Low** | `src/agentdecompile_cli/mcp_server/providers/enums.py` | Enforce COBRA_CASE at runtime via `is_cobra_case()` on create/add/edit_member~~ **Done** (PR #49)
+- ~~**Low** | `src/agentdecompile_cli/mcp_server/program_metadata.py` | Scope UI hints / auto-checkin to mutating enum modes via payload `action`~~ **Done** (PR #49)
+- ~~**Low** | `tests/test_manage_enums.py` | Add formatter/conflict-response coverage with mocked handlers~~ **Done** (PR #49)

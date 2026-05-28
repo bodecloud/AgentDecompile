@@ -43,6 +43,15 @@ def is_cobra_case(name: str) -> bool:
     return bool(_COBRACASE_RE.match(name))
 
 
+def require_cobra_case_member_name(name: str) -> None:
+    """Raise ValueError when an enum member name is not COBRA_CASE."""
+    if not is_cobra_case(name):
+        raise ValueError(
+            f"Enum member name must use COBRA_CASE (SCREAMING_SNAKE), got {name!r}. "
+            "Example: SAVE_SLOT_EMPTY"
+        )
+
+
 def parse_enum_member_specs(
     raw_members: list[Any] | None,
     *,
@@ -64,10 +73,12 @@ def parse_enum_member_specs(
                 value_raw = ni.get("value")
             if value_raw is None:
                 raise ValueError(f"Member '{member_name}' missing integer value")
+            require_cobra_case_member_name(str(member_name))
             specs.append((str(member_name), int(value_raw)))
     if single_name:
         if single_value is None:
             raise ValueError("memberValue is required when memberName is provided")
+        require_cobra_case_member_name(single_name)
         specs.append((single_name, int(single_value)))
     return specs
 
@@ -330,6 +341,7 @@ class EnumToolProvider(ToolProvider):
             )
 
         member_name = self._require_str(args, "membername", "member", name="memberName")
+        require_cobra_case_member_name(member_name)
         member_value = self._get_int(args, "membervalue", "value")
         if member_value is None:
             raise ValueError("memberValue is required for add_member")
@@ -368,6 +380,8 @@ class EnumToolProvider(ToolProvider):
         if member_value is None:
             member_value = int(enum_dt.getValue(member_name))
         target_name = new_member_name or member_name
+        if new_member_name:
+            require_cobra_case_member_name(new_member_name)
 
         def _edit_member() -> None:
             if new_member_name and new_member_name != member_name:

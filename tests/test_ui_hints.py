@@ -107,6 +107,49 @@ def test_inject_ui_hints_round_trip() -> None:
 
 
 @pytest.mark.unit
+def test_attach_ui_hints_skips_enum_list_action() -> None:
+    payload: dict = {"action": "list", "enums": [], "count": 0}
+
+    program_metadata.attach_ui_hints_to_payload(
+        payload,
+        "session-1",
+        tool_name_normalized="manageenums",
+    )
+
+    assert "uiVisibility" not in payload
+    assert "guiHint" not in payload
+
+
+@pytest.mark.unit
+def test_attach_ui_hints_on_enum_create_action(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_session = SimpleNamespace(
+        project_handle={"mode": "local", "path": "/tmp/proj.gpr"},
+        open_programs={},
+        active_program_key=None,
+        project_binaries=[],
+    )
+    _patch_session(monkeypatch, fake_session)
+    payload: dict = {"action": "create", "success": True}
+
+    program_metadata.attach_ui_hints_to_payload(
+        payload,
+        "session-1",
+        tool_name_normalized="manageenums",
+    )
+
+    assert "uiVisibility" in payload
+    assert "guiHint" in payload
+
+
+@pytest.mark.unit
+def test_payload_has_mutating_action_enum_list() -> None:
+    assert program_metadata.payload_has_mutating_action("manageenums", {"action": "list"}) is False
+    assert program_metadata.payload_has_mutating_action("manageenums", {"action": "create"}) is True
+
+
+@pytest.mark.unit
 def test_inject_ui_hints_leaves_non_json_unchanged() -> None:
     text = "not json"
     assert program_metadata.inject_ui_hints(text, "session-1", tool_name_normalized="managecomments") == text

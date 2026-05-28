@@ -22,6 +22,7 @@ from agentdecompile_cli.mcp_server.session_context import (
     SessionContext,
     is_shared_server_handle,
 )
+from agentdecompile_cli.registry import normalize_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -468,6 +469,30 @@ _MUTATING_UI_HINT_TOOLS: frozenset[str] = frozenset(
     }
 )
 
+# Multi-mode tools: only attach UI hints / auto-checkin when payload action is mutating.
+_MUTATING_TOOL_ACTIONS: dict[str, frozenset[str]] = {
+    "manageenums": frozenset(
+        {
+            "create",
+            "addmember",
+            "editmember",
+            "removemember",
+            "delete",
+        },
+    ),
+}
+
+
+def payload_has_mutating_action(tool_name_normalized: str, payload: dict[str, Any]) -> bool:
+    """Return True when a multi-mode tool response represents a state mutation."""
+    allowed = _MUTATING_TOOL_ACTIONS.get(tool_name_normalized)
+    if allowed is None:
+        return True
+    action_raw = payload.get("action")
+    if action_raw in (None, ""):
+        return False
+    return normalize_identifier(str(action_raw)) in allowed
+
 
 def _is_successful_mutation_payload(payload: dict[str, Any]) -> bool:
     if payload.get("success") is False:
@@ -527,6 +552,8 @@ def attach_ui_hints_to_payload(
     if tool_name_normalized in _SKIP_CONTEXT_TOOLS:
         return
     if tool_name_normalized not in _MUTATING_UI_HINT_TOOLS:
+        return
+    if not payload_has_mutating_action(tool_name_normalized, payload):
         return
     if "uiVisibility" in payload or "guiHint" in payload:
         return
