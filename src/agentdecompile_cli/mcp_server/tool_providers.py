@@ -47,6 +47,7 @@ from agentdecompile_cli.mcp_server.response_formatter import render_tool_respons
 from agentdecompile_cli.mcp_server.program_metadata import (  # pyright: ignore[reportMissingImports]
     attach_project_context_to_payload,
     inject_project_context,
+    inject_ui_hints,
 )
 from agentdecompile_cli.mcp_server.session_context import (  # pyright: ignore[reportMissingImports]
     SESSION_CONTEXTS,
@@ -907,13 +908,20 @@ class ToolProvider:
 
                 sid = _get_sid()
                 if result and isinstance(result[0], types.TextContent):
+                    injected_text = inject_project_context(
+                        result[0].text,
+                        sid,
+                        tool_name_normalized=norm_name,
+                    )
+                    injected_text = inject_ui_hints(
+                        injected_text,
+                        sid,
+                        tool_name_normalized=norm_name,
+                        auto_checkin_enabled=_auto_checkin_enabled(),
+                    )
                     result[0] = types.TextContent(
                         type="text",
-                        text=inject_project_context(
-                            result[0].text,
-                            sid,
-                            tool_name_normalized=norm_name,
-                        ),
+                        text=injected_text,
                     )
             except Exception as inject_exc:
                 logger.debug("project_context_inject_skip: %s", inject_exc)

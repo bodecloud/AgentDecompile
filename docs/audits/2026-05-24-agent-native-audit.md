@@ -195,7 +195,7 @@ AgentDecompile uses a **headless MCP JVM** separate from CodeBrowser. Mutations 
 | Live GUI event bus | ❌ |
 | File watching | ❌ |
 | Web UI listing mirror | ❌ (console only) |
-| Tool response feedback | ✅ |
+| Tool response feedback | ✅ (`uiVisibility` / `guiHint` on mutating tools) |
 | Auto-checkin (silent persist) | ⚠️ |
 
 ### Recommendations

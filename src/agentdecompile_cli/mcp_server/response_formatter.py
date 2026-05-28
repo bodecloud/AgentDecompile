@@ -3101,6 +3101,29 @@ def render_tool_response(normalized_tool_name: str, data: dict[str, Any]) -> str
         if ctx_parts:
             lines.append(" | ".join(ctx_parts))
 
+    ui_visibility: dict[str, Any] | None = data.get("uiVisibility") if isinstance(data, dict) else None
+    gui_hint = data.get("guiHint") if isinstance(data, dict) else None
+    if ui_visibility or gui_hint:
+        lines.append("")
+        lines.append(_md_heading(3, "UI Visibility"))
+        if isinstance(ui_visibility, dict):
+            vis_parts: list[str] = []
+            if ui_visibility.get("liveInCodeBrowser") is False:
+                vis_parts.append("not live in CodeBrowser")
+            persistence = ui_visibility.get("persistence")
+            if persistence:
+                vis_parts.append(f"persistence: `{persistence}`")
+            sync = ui_visibility.get("codeBrowserSync")
+            if sync:
+                vis_parts.append(f"sync: `{sync}`")
+            if ui_visibility.get("autoCheckinEnabled"):
+                vis_parts.append("auto-checkin enabled")
+            if vis_parts:
+                lines.append(" | ".join(vis_parts))
+        if gui_hint:
+            lines.append("")
+            lines.append(str(gui_hint))
+
     if guidance:
         description, next_steps_fn = guidance
         lines.append("")

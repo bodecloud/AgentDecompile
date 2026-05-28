@@ -449,3 +449,119 @@ def inject_project_context(
     if "projectContext" not in data:
         return response_text
     return _json.dumps(data)
+
+
+# Tools whose successful responses should carry uiVisibility / guiHint.
+# Keep aligned with _AUTO_CHECKIN_TRIGGER_TOOLS in tool_providers.py.
+_MUTATING_UI_HINT_TOOLS: frozenset[str] = frozenset(
+    {
+        "managesymbols",
+        "managefunction",
+        "managecomments",
+        "managestructures",
+        "applydatatype",
+        "managebookmarks",
+        "managefunctiontags",
+        "matchfunction",
+        "resolvemodificationconflict",
+    }
+)
+
+
+def _is_successful_mutation_payload(payload: dict[str, Any]) -> bool:
+    if payload.get("success") is False:
+        return False
+    if payload.get("modificationConflict") is True:
+        return False
+    error_value = payload.get("error")
+    if error_value not in (None, "", False):
+        return False
+    return True
+
+
+def build_ui_visibility(session_id: str, *, auto_checkin_enabled: bool) -> dict[str, Any]:
+    """Structured UI visibility metadata for mutating tool responses."""
+    session: SessionContext = SESSION_CONTEXTS.get_or_create(session_id)
+    handle = session.project_handle
+    is_shared = is_shared_server_handle(handle)
+    return {
+        "liveInCodeBrowser": False,
+        "codeBrowserSync": "reload-or-checkout",
+        "runtime": "headless-mcp",
+        "persistence": "shared-checkin" if is_shared else "local-save",
+        "autoCheckinEnabled": auto_checkin_enabled,
+    }
+
+
+def build_gui_hint(session_id: str, *, auto_checkin_enabled: bool) -> str:
+    """Human-readable hint for agents about GUI visibility after mutations."""
+    session: SessionContext = SESSION_CONTEXTS.get_or_create(session_id)
+    is_shared = is_shared_server_handle(session.project_handle)
+    parts = [
+        "Mutation applied in the headless MCP session (separate JVM from CodeBrowser).",
+    ]
+    if is_shared:
+        parts.append(
+            "On shared server: check in or sync, then reload or checkout in CodeBrowser to view changes.",
+        )
+    else:
+        parts.append(
+            "On local project: changes save to the .gpr; reload the program in CodeBrowser to view.",
+        )
+    if auto_checkin_enabled:
+        parts.append("Auto-checkin is enabled — persistence runs automatically after modifying tools.")
+    else:
+        parts.append("Call checkin-program to persist before viewing in CodeBrowser.")
+    return " ".join(parts)
+
+
+def attach_ui_hints_to_payload(
+    payload: dict[str, Any],
+    session_id: str,
+    *,
+    tool_name_normalized: str = "",
+    auto_checkin_enabled: bool = False,
+) -> None:
+    """Attach ``uiVisibility`` and ``guiHint`` when this is a successful mutating tool."""
+    if tool_name_normalized in _SKIP_CONTEXT_TOOLS:
+        return
+    if tool_name_normalized not in _MUTATING_UI_HINT_TOOLS:
+        return
+    if "uiVisibility" in payload or "guiHint" in payload:
+        return
+    if not _is_successful_mutation_payload(payload):
+        return
+    payload["uiVisibility"] = build_ui_visibility(session_id, auto_checkin_enabled=auto_checkin_enabled)
+    payload["guiHint"] = build_gui_hint(session_id, auto_checkin_enabled=auto_checkin_enabled)
+
+
+def inject_ui_hints(
+    response_text: str,
+    session_id: str,
+    *,
+    tool_name_normalized: str = "",
+    auto_checkin_enabled: bool = False,
+) -> str:
+    """Parse JSON tool response and inject UI hint fields for mutating tools."""
+    if tool_name_normalized in _SKIP_CONTEXT_TOOLS:
+        return response_text
+
+    import json as _json
+
+    try:
+        data = _json.loads(response_text)
+    except Exception:
+        return response_text
+
+    if not isinstance(data, dict):
+        return response_text
+
+    attach_ui_hints_to_payload(
+        data,
+        session_id,
+        tool_name_normalized=tool_name_normalized,
+        auto_checkin_enabled=auto_checkin_enabled,
+    )
+    if "uiVisibility" not in data and "guiHint" not in data:
+        return response_text
+    return _json.dumps(data)

@@ -14,7 +14,7 @@ From [2026-05-24 agent-native audit](../audits/2026-05-24-agent-native-audit.md)
 |----|------|--------|-----------|
 | P1-1 | `program_metadata.collect_project_context()` | ~~Add `analysisComplete`, compact `checkoutSummary`; inject slim context on errors~~ **Done** (PR #49) | Context injection |
 | P1-2 | MCP server | ~~Implement **`prompts/get`** (9 prompts listed; content exists)~~ **Done** (PR #49) | Discovery + prompt-native |
-| P1-3 | Mutating tool responses | Add **`uiVisibility` / `guiHint`** footer | UI integration |
+| P1-3 | Mutating tool responses | ~~Add **`uiVisibility` / `guiHint`** footer~~ **Done** (PR #49) | UI integration |
 | P1-4 | Proxy | Forward **`x-agentdecompile-project-path`** header | Shared workspace |
 
 ## P2 — CRUD and surface

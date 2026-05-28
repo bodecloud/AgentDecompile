@@ -18,6 +18,7 @@ Every successful tool response (and most errors when programs are loaded) includ
 | `analysisComplete` | Ghidra auto-analysis finished for active program |
 | `analysisByProgram` | Per-program analysis flags when multiple programs are open |
 | `checkoutSummary` | Shared mode: checked-out / modified / can-checkin counts |
+| `uiVisibility` / `guiHint` | Mutating tools: headless persistence + CodeBrowser reload guidance |
 | `projectPath` / `projectName` | Local project location |
 | `serverHost` / `serverPort` / `repository` | Shared server connection |
 
