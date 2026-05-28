@@ -74,6 +74,12 @@ Optional polish from P1-1 review — status:
 
 **Human gate:** squash-merge to `master` when approved.
 
+## Final LFG verification (2026-05-24)
+
+- [x] `.cursorrules` tool count aligned (60 canonical / 56 advertised)
+- [x] Unit suite green locally
+- [x] PR #49 CI green on required checks (unit + headless)
+
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 
 Follow-up polish after P2-1 ship (alias handlers + conflict overwrite addressed in review pass):
