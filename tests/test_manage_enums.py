@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import pytest
+from mcp import types
 
 from agentdecompile_cli.mcp_server.providers.enums import (
     EnumToolProvider,
     is_cobra_case,
     parse_enum_member_specs,
 )
+from agentdecompile_cli.mcp_server.tool_providers import create_success_response
 from agentdecompile_cli.registry import Tool, resolve_tool_name
 
 
@@ -68,3 +70,27 @@ def test_is_cobra_case_accepts_screaming_snake() -> None:
     assert is_cobra_case("A")
     assert not is_cobra_case("saveSlot")
     assert not is_cobra_case("1BAD")
+
+
+@pytest.mark.unit
+def test_manage_enums_alias_handlers_are_registered() -> None:
+    provider = EnumToolProvider()
+    for alias in ("createenum", "editenum", "listenums", "deleteenum", "getenuminfo"):
+        assert alias in provider.HANDLERS
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_create_enum_alias_presets_mode() -> None:
+    from typing import Any
+
+    provider = EnumToolProvider()
+    captured: dict[str, Any] = {}
+
+    async def fake_handle(args: dict[str, Any]) -> list[types.TextContent]:
+        captured.update(args)
+        return create_success_response({"action": "create", "success": True})
+
+    provider._handle = fake_handle  # type: ignore[method-assign]
+    await provider._handle_create_alias({})
+    assert captured.get("mode") == "create"

@@ -73,7 +73,14 @@ def parse_enum_member_specs(
 
 
 class EnumToolProvider(ToolProvider):
-    HANDLERS = {"manageenums": "_handle"}
+    HANDLERS = {
+        "createenum": "_handle_create_alias",
+        "deleteenum": "_handle_delete_alias",
+        "editenum": "_handle_edit_alias",
+        "getenuminfo": "_handle_info_alias",
+        "listenums": "_handle_list_alias",
+        "manageenums": "_handle",
+    }
 
     def _find_enum(self, dtm: GhidraDataTypeManager, name: str) -> GhidraEnum | None:
         logger.debug("diag.enter %s", "mcp_server/providers/enums.py:EnumToolProvider._find_enum")
@@ -157,6 +164,26 @@ class EnumToolProvider(ToolProvider):
         }
         handler = self._dispatch_handler(dispatch, action, "action")
         return await handler(args)
+
+    async def _handle_mode_alias(self, args: dict[str, Any], mode: str) -> list[types.TextContent]:
+        forwarded_args = dict(args)
+        forwarded_args.setdefault("mode", mode)
+        return await self._handle(forwarded_args)
+
+    async def _handle_create_alias(self, args: dict[str, Any]) -> list[types.TextContent]:
+        return await self._handle_mode_alias(args, "create")
+
+    async def _handle_list_alias(self, args: dict[str, Any]) -> list[types.TextContent]:
+        return await self._handle_mode_alias(args, "list")
+
+    async def _handle_info_alias(self, args: dict[str, Any]) -> list[types.TextContent]:
+        return await self._handle_mode_alias(args, "info")
+
+    async def _handle_delete_alias(self, args: dict[str, Any]) -> list[types.TextContent]:
+        return await self._handle_mode_alias(args, "delete")
+
+    async def _handle_edit_alias(self, args: dict[str, Any]) -> list[types.TextContent]:
+        return await self._handle_mode_alias(args, "edit_member")
 
     async def _list(self, args: dict[str, Any]) -> list[types.TextContent]:
         logger.debug("diag.enter %s", "mcp_server/providers/enums.py:EnumToolProvider._list")
@@ -250,7 +277,12 @@ class EnumToolProvider(ToolProvider):
 
         from ghidra.program.model.data import CategoryPath, EnumDataType  # pyright: ignore[reportMissingModuleSource]
 
+        force_apply = bool(args.get(FORCE_APPLY_CONFLICT_ID_KEY))
+        existing = self._find_enum(dtm, name) if force_apply else None
+
         def _create_enum() -> None:
+            if existing is not None:
+                dtm.remove(existing, None)
             enum_dt = EnumDataType(CategoryPath(cat_path), name, dtm)
             if description:
                 enum_dt.setDescription(description)
