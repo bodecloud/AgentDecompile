@@ -42,9 +42,15 @@ From [2026-05-24 agent-native audit](../audits/2026-05-24-agent-native-audit.md)
 
 ## Residual Review Findings (code review c97fb23)
 
-Optional polish from P1-1 review — non-blocking:
+Optional polish from P1-1 review — status:
 
-- **Low** | `response_formatter.py:3072` | Render `analysisComplete` / `checkoutSummary` in markdown Project Context footer
-- **Low** | `tests/test_project_context.py` | Add unit test: error response omits `projectContext` when session has no programs
-- **Low** | `.cursor/commands/help.md` | Document `analysisByProgram` field
-- **Info** | `docs/audits/2026-05-24-agent-native-audit.md:120` | Update Context Injection audit rows post-P1-1
+- **Low** | `response_formatter.py:3072` | Render `analysisComplete` / `checkoutSummary` in markdown Project Context footer — open
+- ~~**Low** | `tests/test_project_context.py` | Add unit test: error response omits `projectContext` when session has no programs~~ **Done**
+- ~~**Low** | `.cursor/commands/help.md` | Document `analysisByProgram` field~~ **Done**
+- ~~**Info** | `docs/audits/2026-05-24-agent-native-audit.md:120` | Update Context Injection audit rows post-P1-1~~ **Done**
+
+## PR #49 ship gate
+
+- [x] CI green (unit, headless, CodeQL)
+- [x] P1-1 + simplification on branch
+- [ ] Merge to `master` (human review)

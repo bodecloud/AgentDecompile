@@ -40,7 +40,7 @@ flowchart TD
 | Capability Discovery | 5/7 mechanisms | 71% | ⚠️ |
 | Prompt-Native Features | 1/6 audited features | 17% | ❌ |
 
-**Overall agent-native score (mean of percentages): ~71%**
+**Overall agent-native score (mean of percentages): ~72%**
 
 ### Status legend
 
@@ -110,22 +110,22 @@ flowchart TD
 
 ## Context Injection Audit
 
-**Score: 5/7 (71%)**
+**Score: 7/7 (100%)** — P1-1 shipped in PR #49
 
 | Context type | Injected passively? | Where |
 |--------------|---------------------|-------|
-| Active program | ✅ | `projectContext` on tool success |
+| Active program | ✅ | `projectContext` on tool success + errors |
 | Open programs | ✅ | `projectContext.openPrograms` |
 | Project path | ✅ | `projectContext.projectPath` |
-| Analysis complete | ❌ | Only in `agentdecompile://debug-info` |
-| Checkout state | ❌ | Probe via resource / `checkout-status` |
+| Analysis complete | ✅ | `projectContext.analysisComplete` / `analysisByProgram` |
+| Checkout state | ✅ | `projectContext.checkoutSummary` (shared mode) |
 | Session id | ❌ | `debug-info` only |
 | Available tools | ❌ | `tools/list` separate call |
 
 ### Recommendations
 
-1. Extend `collect_project_context()` with `analysisComplete` and compact `checkoutSummary`.
-2. Inject slim `projectContext` on **error** responses (analysis timeout, no program).
+1. ~~Extend `collect_project_context()` with `analysisComplete` and compact `checkoutSummary`.~~ **Done (PR #49)**
+2. ~~Inject slim `projectContext` on **error** responses (analysis timeout, no program).~~ **Done (PR #49)**
 3. Implement MCP **`prompts/get`** with live session substitution.
 4. Add initialize instructions or `agentdecompile://capabilities` resource.
 
@@ -272,13 +272,13 @@ The canonical **`/lfg`** proof (`.cursor/commands/lfg.md`, `scripts/lfg_validati
 
 | Priority | Action | Principle | Effort |
 |----------|--------|-----------|--------|
-| 1 | Extend `projectContext` with `analysisComplete`, checkout summary, errors | Context injection | Low |
+| 1 | ~~Extend `projectContext` with `analysisComplete`, checkout summary, errors~~ **Done (PR #49)** | Context injection | Low |
 | 2 | Implement MCP **`prompts/get`** | Discovery + prompt-native | Medium |
 | 3 | Add **`uiVisibility` / guiHint** on mutating tools | UI integration | Low |
 | 4 | Forward **`x-agentdecompile-project-path`** on proxy | Shared workspace | Low |
 | 5 | Add **`manage-enums`** or enum modes on `manage-data-types` | CRUD | Medium |
 | 6 | Add **`delete_label`** on `manage-symbols` | CRUD | Low |
-| 7 | Add **`.cursor/commands/help.md`** capability discovery | Discovery | Low |
+| 7 | ~~Add **`.cursor/commands/help.md`** capability discovery~~ **Done (PR #49)** | Discovery | Low |
 | 8 | Invert **curated** surface: advertise list/search primitives | Tools as primitives | Medium |
 | 9 | Document **dual-JVM + checkin-before-GUI-reload** workflow | UI integration | Low |
 | 10 | Fix or remove **`suggest`** stub | Prompt-native clarity | Low |

@@ -438,9 +438,14 @@ def inject_project_context(
     if not isinstance(data, dict):
         return response_text
 
+    if "projectContext" in data:
+        return response_text
+
     attach_project_context_to_payload(
         data,
         session_id,
         tool_name_normalized=tool_name_normalized,
     )
+    if "projectContext" not in data:
+        return response_text
     return _json.dumps(data)
