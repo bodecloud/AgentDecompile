@@ -1,6 +1,6 @@
 ---
 title: LFG — agent-native architecture audit (AgentDecompile MCP)
-status: ready_for_pr
+status: completed
 created: 2026-05-24
 branch: impl/agent-native-audit-c2bc
 scope: AgentDecompile MCP server, CLI, /lfg proof path
