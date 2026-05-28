@@ -1,8 +1,8 @@
 """Suggestion Tool Provider - get-suggestions (tool name 'suggest').
 
-- suggestionType: comment_type, comment_text, function_name, function_tags, variable_name, data_type.
-- addressOrSymbol / functionIdentifier define the context; variableName used for variable_name suggestions.
-- maxContext, includeCallers, includeCallees control how much surrounding context is fed to the suggestion engine. Suggestions are advisory only (no automatic edits).
+Stub tool: no-args call lists legacy suggestionType values. Typed calls raise
+not-implemented — use decompile-function for context and rename-function /
+manage-symbols to apply names (see AGENTS.md naming conventions).
 """
 
 from __future__ import annotations
@@ -92,7 +92,10 @@ class SuggestionToolProvider(ToolProvider):
             "datatype",
         }
         if suggestion_type not in valid_suggestion_types:
-            raise ValueError("Invalid suggestion_type")
+            raise ValueError(
+                "Invalid suggestionType. Valid values: comment_type, comment_text, "
+                "function_name, function_tags, variable_name, data_type."
+            )
 
         raise ValueError(
             "The suggest tool is not implemented. Use decompile-function (or get-function) for "

@@ -1,7 +1,7 @@
 ---
 title: LFG — P3 hygiene (dual-JVM docs, suggest stub, import-binary fail-hard)
 type: feat
-status: active
+status: completed
 date: 2026-05-24
 branch: impl/agent-native-audit-c2bc
 pr: https://github.com/bolabaden/AgentDecompile/pull/49
