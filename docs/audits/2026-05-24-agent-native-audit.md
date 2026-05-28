@@ -33,7 +33,7 @@ flowchart TD
 |----------------|-------|------------|--------|
 | Action Parity | 40/41 headless outcomes | 98% | ✅ |
 | Tools as Primitives | 35/55 (strict atomic: 21/55) | 64% (38% strict) | ⚠️ |
-| Context Injection | 5/7 context types | 71% | ⚠️ |
+| Context Injection | 7/7 context types | 100% | ✅ |
 | Shared Workspace | 10/14 stores shared | 71% (6/6 persisted RE data) | ⚠️ |
 | CRUD Completeness | 7/12 entities full CRUD | 58% | ⚠️ |
 | UI Integration | 18/23 deferred GUI visibility | 78% deferred; 0% live | ⚠️ |
@@ -216,7 +216,7 @@ AgentDecompile uses a **headless MCP JVM** separate from CodeBrowser. Mutations 
 | Help docs | ✅ TOOLS_LIST.md, OpenAPI `/docs` |
 | UI hints | ✅ TOOL_GUIDANCE, nextSteps |
 | Agent self-describes | ⚠️ per-tool; no initialize preamble |
-| Suggested prompts | ✅ 9 MCP prompts; **`prompts/get` missing** |
+| Suggested prompts | ✅ 9 MCP prompts; **`prompts/get` implemented** (session substitution) |
 | Empty state | ⚠️ reactive errors only |
 | Slash commands | ❌ only `/lfg` (proof, not discovery) |
 
