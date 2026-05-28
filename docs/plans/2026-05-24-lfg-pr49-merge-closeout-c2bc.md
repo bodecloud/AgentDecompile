@@ -4,7 +4,7 @@ type: chore
 status: completed
 merge_commit: 13200d6ae3cee00d0150f66bec6b42fcb51059d2
 date: 2026-05-24
-branch: impl/agent-native-audit-c2bc
+branch: impl/post-merge-pr49-closeout-c2bc
 pr: https://github.com/bolabaden/AgentDecompile/pull/49
 origin: docs/residual-review-findings/impl-agent-native-audit-c2bc.md
 ---
