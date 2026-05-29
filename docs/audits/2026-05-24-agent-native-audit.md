@@ -35,14 +35,14 @@ flowchart TD
 | Tools as Primitives | 35/55 (strict atomic: 21/55) | 64% (38% strict) | ⚠️ |
 | Context Injection | 7/7 context types | 100% | ✅ |
 | Shared Workspace | 12/14 stores shared | 86% (6/6 persisted RE data) | ✅ |
-| CRUD Completeness | 10/12 entities full CRUD | 83% | ⚠️ |
+| CRUD Completeness | 12/12 entities full CRUD | 100% | ✅ |
 | UI Integration | 18/23 deferred GUI visibility | 78% deferred; 0% live | ⚠️ |
 | Capability Discovery | 7/7 mechanisms | 100% | ✅ |
 | Prompt-Native Features | 1/6 audited features | 17% | ❌ |
 
-**Overall agent-native score (mean of percentages): ~76%**
+**Overall agent-native score (mean of percentages): ~78%**
 
-**CRUD arc:** open stack PR #105 + #106 → **impl/crud-arc-stack-c2bc** (strings 4/4, data-type catalog create/delete). See [agent-native-crud-arc.md](../solutions/architecture-patterns/agent-native-crud-arc.md).
+**CRUD mega-stack:** open PR **impl/crud-mega-stack-c2bc** (strings 4/4, catalog 4/4, function-tags set 4/4) — supersedes #107, #109, #110. See [agent-native-crud-arc.md](../solutions/architecture-patterns/agent-native-crud-arc.md).
 
 **Discovery arc:** merged squash **`d3c0c4e`** ([PR #102](https://github.com/bolabaden/AgentDecompile/pull/102)) — empty-session hints, auto-checkin footer, initialize preamble, variable-rename integration test, audit sync. See [agent-native-discovery-arc.md](../solutions/architecture-patterns/agent-native-discovery-arc.md).
 
@@ -162,7 +162,7 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 
 ## CRUD Completeness Audit
 
-**Score: 10/12 entities with full CRUD (83%)**
+**Score: 12/12 entities with full CRUD (100%)**
 
 | Entity | C | R | U | D | Score |
 |--------|---|---|---|---|-------|
@@ -174,8 +174,8 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 | Project files | ✅ | ✅ | ✅ | ✅ | Full |
 | VC checkout state | ✅ | ✅ | ✅ | ✅ | Full |
 | Symbols/labels | ✅ | ✅ | ✅ | ✅ | Full |
-| Function tags | ✅ | ✅ | ⚠️ | ✅ | 3/4 |
-| Data types (catalog) | ✅ | ✅ | ⚠️ | ✅ | 3/4 |
+| Function tags | ✅ | ✅ | ✅ | ✅ | Full |
+| Data types (catalog) | ✅ | ✅ | ✅ | ✅ | Full |
 | Strings | ✅ | ✅ | ✅ | ✅ | Full |
 | Enums | ✅ | ✅ | ✅ | ✅ | Full |
 
@@ -183,7 +183,7 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 
 - ~~**Variable rename / local type** — registry params existed; handlers missing on `manage-function`.~~ **Done (PR #92)** — `rename_variable`, `set_variable_type`, `change_datatypes` modes; see [decompiler-variable-mutations.md](../solutions/architecture-patterns/decompiler-variable-mutations.md).
 
-Remaining CRUD gaps: generic data-type catalog update/edit; function-tag update partial.
+Remaining CRUD gaps: **none** (mega-stack lands strings, catalog update, function-tags set).
 
 ---
 

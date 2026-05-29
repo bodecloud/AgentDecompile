@@ -7,7 +7,8 @@ problem_type: architecture_pattern
 component: crud-completeness
 symptoms:
   - Strings scored 1/4 CRUD (read-only manage-strings)
-  - Data-type catalog lacked create/delete in manage-data-types
+  - Data-type catalog lacked create/delete/update in manage-data-types
+  - Function tags lacked real set (replace-all) mode
   - Overall CRUD completeness stuck at 75% (9/12)
 root_cause: missing_mutating_modes_on_multi_mode_tools
 resolution_type: code_and_docs
@@ -18,53 +19,60 @@ tags:
   - crud
   - manage-strings
   - manage-data-types
+  - manage-function-tags
 ---
 
 # Agent-native CRUD arc
 
 ## Problem
 
-The 2026-05-24 audit listed **strings CRUD** and **data-type catalog create** as remaining gaps. `manage-strings` was read-only despite registry classifying it as state-writing; `manage-data-types` could list/parse/apply but not add or remove catalog typedefs.
+The 2026-05-24 audit listed **strings CRUD**, **data-type catalog create**, **catalog update**, and **function-tag set** as remaining gaps across `manage-strings`, `manage-data-types`, and `manage-function-tags`.
 
-## Solution (stack PR)
+## Solution (mega-stack PR)
 
-Combines [#105](https://github.com/bolabaden/AgentDecompile/pull/105) and [#106](https://github.com/bolabaden/AgentDecompile/pull/106) on branch `impl/crud-arc-stack-c2bc`.
+Branch **`impl/crud-mega-stack-c2bc`** — single squash merge to `master`, supersedes #105–#110.
 
 ```mermaid
 flowchart LR
   subgraph strings [Strings 4/4]
-    A[create update delete modes]
+    A[create update delete]
   end
-  subgraph dtypes [Data types catalog 3/4]
-    B[create delete info modes]
+  subgraph dtypes [Catalog 4/4]
+    B[create update delete info]
   end
-  strings --> S[CRUD arc stack PR]
-  dtypes --> S
+  subgraph tags [Function tags 4/4]
+    C[add remove set]
+  end
+  strings --> M[mega-stack PR]
+  dtypes --> M
+  tags --> M
 ```
 
-| PR | Deliverable | Key files |
-|----|-------------|-----------|
-| [#105](https://github.com/bolabaden/AgentDecompile/pull/105) | `manage-strings` create/update/delete | `providers/strings.py`, `test_manage_strings.py` |
-| [#106](https://github.com/bolabaden/AgentDecompile/pull/106) | `manage-data-types` create/delete/info | `providers/datatypes.py`, `test_manage_data_types.py` |
-| Stack | **Single merge** to `master` | Supersedes #105–#106 |
+| Slice | Deliverable |
+|-------|-------------|
+| Strings | `manage-strings` create/update/delete |
+| Catalog | `manage-data-types` create/update/delete/info |
+| Tags | `manage-function-tags` set replaces all tags |
+| **Merge** | One PR → **12/12 CRUD (100%)** |
 
 ## Audit impact
 
 | Entity | Before | After |
 |--------|--------|-------|
 | Strings | 1/4 | **4/4** |
-| Data types (catalog) | 2/4 | **3/4** (update still partial) |
-| CRUD completeness | 9/12 (75%) | **10/12 (83%)** |
+| Data types (catalog) | 2/4 | **4/4** |
+| Function tags | 3/4 | **4/4** |
+| CRUD completeness | 9/12 (75%) | **12/12 (100%)** |
 
 ## Patterns
 
 - Mutating multi-mode tools: return `action` in JSON; gate UI hints via `_MUTATING_TOOL_ACTIONS` in `program_metadata.py`.
-- Catalog create: parse C type string → `TypedefDataType` + `dtm.addDataType()` with conflict flow.
-- String create: `memory.setBytes` + `listing.createData` with `string`/`unicode` types inside `_run_program_transaction`.
+- Catalog CRUD: `TypedefDataType` + `dtm.addDataType()` / `dtm.remove()` with conflict flow on create/rename.
+- Function-tags set: clear `func.getTags()` then `addTag` each name in one transaction.
 
 ## Verification
 
 ```bash
-uv run pytest tests/test_manage_strings.py tests/test_manage_data_types.py -m unit -q --timeout=60
+uv run pytest tests/test_manage_strings.py tests/test_manage_data_types.py tests/test_manage_function_tags.py -m unit -q --timeout=60
 uv run pytest -m unit -q --timeout=120
 ```

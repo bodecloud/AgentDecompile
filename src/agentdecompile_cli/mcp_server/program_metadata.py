@@ -484,6 +484,7 @@ _MUTATING_TOOL_ACTIONS: dict[str, frozenset[str]] = {
     ),
     "managestrings": frozenset({"create", "update", "delete"}),
     "managedatatypes": frozenset({"create", "update", "delete", "apply"}),
+    "managefunctiontags": frozenset({"add", "remove", "set"}),
 }
 
 

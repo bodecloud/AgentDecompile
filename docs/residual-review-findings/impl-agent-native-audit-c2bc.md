@@ -101,15 +101,15 @@ Capability Discovery **7/7** on `master`. Compound: [agent-native-discovery-arc.
 
 **Residual actionable work: none.**
 
-## CRUD arc — stack (PR #105 + #106)
+## CRUD arc — mega-stack (open)
 
 | Item | Status |
 |------|--------|
-| [#105](https://github.com/bolabaden/AgentDecompile/pull/105) strings CRUD | Superseded by stack PR |
-| [#106](https://github.com/bolabaden/AgentDecompile/pull/106) data-types catalog | Superseded by stack PR |
-| Stack branch `impl/crud-arc-stack-c2bc` | Open — merge to `master` |
+| `impl/crud-mega-stack-c2bc` | **Open** — merge to `master` (supersedes #107, #109, #110) |
+| [#107](https://github.com/bolabaden/AgentDecompile/pull/107)–[#110](https://github.com/bolabaden/AgentDecompile/pull/110) | Superseded by mega-stack |
+| [#105](https://github.com/bolabaden/AgentDecompile/pull/105)–[#106](https://github.com/bolabaden/AgentDecompile/pull/106) | Superseded by mega-stack lineage |
 
-CRUD completeness **10/12 (83%)** when landed. Compound: [agent-native-crud-arc.md](../solutions/architecture-patterns/agent-native-crud-arc.md).
+CRUD completeness **12/12 (100%)** when mega-stack lands. Compound: [agent-native-crud-arc.md](../solutions/architecture-patterns/agent-native-crud-arc.md).
 
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 
