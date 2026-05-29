@@ -1,6 +1,6 @@
 ---
 title: LFG — CRUD mega-stack merge gate (PR #111)
-status: active
+status: completed
 type: chore
 date: 2026-05-24
 branch: impl/crud-mega-stack-c2bc
