@@ -35,7 +35,7 @@ flowchart TD
 | Tools as Primitives | 35/55 (strict atomic: 21/55) | 64% (38% strict) | ⚠️ |
 | Context Injection | 7/7 context types | 100% | ✅ |
 | Shared Workspace | 12/14 stores shared | 86% (6/6 persisted RE data) | ✅ |
-| CRUD Completeness | 9/12 entities full CRUD | 75% | ⚠️ |
+| CRUD Completeness | 10/12 entities full CRUD | 83% | ⚠️ |
 | UI Integration | 18/23 deferred GUI visibility | 78% deferred; 0% live | ⚠️ |
 | Capability Discovery | 7/7 mechanisms | 100% | ✅ |
 | Prompt-Native Features | 1/6 audited features | 17% | ❌ |
@@ -174,14 +174,14 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 | Symbols/labels | ✅ | ✅ | ✅ | ✅ | Full |
 | Function tags | ✅ | ✅ | ⚠️ | ✅ | 3/4 |
 | Data types (catalog) | ❌ | ✅ | ⚠️ | ❌ | 2/4 |
-| Strings | ❌ | ✅ | ❌ | ❌ | 1/4 |
+| Strings | ✅ | ✅ | ✅ | ✅ | Full |
 | Enums | ✅ | ✅ | ✅ | ✅ | Full |
 
 ### Top gaps
 
 - ~~**Variable rename / local type** — registry params existed; handlers missing on `manage-function`.~~ **Done (PR #92)** — `rename_variable`, `set_variable_type`, `change_datatypes` modes; see [decompiler-variable-mutations.md](../solutions/architecture-patterns/decompiler-variable-mutations.md).
 
-Remaining CRUD gaps (unchanged): data-type catalog create, strings CRUD.
+Remaining CRUD gaps (unchanged): data-type catalog create.
 
 ---
 

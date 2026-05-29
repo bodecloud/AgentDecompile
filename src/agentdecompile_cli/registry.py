@@ -491,7 +491,7 @@ _TOOL_PARAMS_STR: dict[str, list[str]] = {
         "propagateMaxCandidates",
         "propagateMaxInstructions",
     ),
-    Tool.MANAGE_STRINGS.value: _params("programPath", "mode", "pattern", "searchString", "filter", "query", "startIndex", "maxCount", "offset", "limit", "includeReferencingFunctions"),
+    Tool.MANAGE_STRINGS.value: _params("programPath", "mode", "pattern", "searchString", "filter", "query", "startIndex", "maxCount", "offset", "limit", "includeReferencingFunctions", "addressOrSymbol", "value", "encoding"),
     Tool.MANAGE_STRUCTURES.value: _params(
         "programPath",
         "mode",
