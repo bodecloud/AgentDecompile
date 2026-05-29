@@ -7,11 +7,7 @@ Searchable institutional learnings from solved problems in AgentDecompile. Each 
 | Directory | problem_type examples |
 |-----------|---------------------|
 | `integration-issues/` | MCP session, Ghidra import, tool dispatch |
-<<<<<<< HEAD
-| `architecture-patterns/` | Coordinators, locking, fail-closed behavior, **tiered RE tool routing**, **capabilities MCP resource** (`capabilities-mcp-resource.md`, `tiered-re-analysis-routing.md`, `tiered-re-analysis-knowledgebase.md`), **empty-session bootstrap hints** (`empty-session-bootstrap-hints.md`) |
-=======
-| `architecture-patterns/` | Coordinators, locking, fail-closed behavior, **tiered RE tool routing**, **capabilities MCP resource** (`capabilities-mcp-resource.md`, `tiered-re-analysis-routing.md`, `tiered-re-analysis-knowledgebase.md`), **auto-checkin response footer** (`auto-checkin-response-footer.md`) |
->>>>>>> origin/impl/auto-checkin-footer-c2bc
+| `architecture-patterns/` | Coordinators, locking, fail-closed behavior, **tiered RE tool routing**, **capabilities MCP resource** (`capabilities-mcp-resource.md`, `tiered-re-analysis-routing.md`, `tiered-re-analysis-knowledgebase.md`), **empty-session bootstrap hints** (`empty-session-bootstrap-hints.md`), **auto-checkin response footer** (`auto-checkin-response-footer.md`) |
 | `developer-experience/` | CLI ergonomics for agents |
 | `logic-errors/` | Incorrect flags or state before analysis |
 | `workflow-issues/` | LFG, shared Ghidra server, check-in |
