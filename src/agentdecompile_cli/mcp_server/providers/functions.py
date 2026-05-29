@@ -34,6 +34,7 @@ from agentdecompile_cli.mcp_server.tool_providers import (
     ToolProvider,
     create_success_response,
 )
+from agentdecompile_cli.registry import Tool
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,51 @@ class FunctionToolProvider(ToolProvider):
         "listfunctions": "_handle_list",
         "getfunctions": "_handle_get",
     }
+
+    def list_tools(self) -> list[types.Tool]:
+        """Advertise list-functions and get-functions tools so they register in _tool_map."""
+        logger.debug("diag.enter %s", "mcp_server/providers/functions.py:FunctionToolProvider.list_tools")
+        return [
+            types.Tool(
+                name=Tool.LIST_FUNCTIONS.value,
+                description="List functions in the current program with optional regex name filter, external function inclusion toggle, and pagination (offset/limit).",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "programPath": {"type": "string", "description": "Path to the program in the project."},
+                        "namePattern": {"type": "string", "description": "Regex pattern to filter function names (case-insensitive)."},
+                        "includeExternals": {"type": "boolean", "default": True, "description": "Include external/imported functions."},
+                        "offset": {"type": "integer", "default": 0, "description": "Pagination offset."},
+                        "limit": {"type": "integer", "default": 100, "description": "Maximum results to return."},
+                    },
+                    "required": [],
+                },
+            ),
+            types.Tool(
+                name=Tool.GET_FUNCTIONS.value,
+                description="Get detailed views (info, decompile, disassemble, calls) for one or more functions. Accepts a single function identifier or a batch array.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "programPath": {"type": "string", "description": "Path to the program in the project."},
+                        "function": {"type": "string", "description": "Function name or address to inspect."},
+                        "functions": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Batch: multiple function names/addresses.",
+                        },
+                        "mode": {
+                            "type": "string",
+                            "description": "View mode: 'info', 'decompile', 'disassemble', 'calls', or omit for all.",
+                            "enum": ["info", "decompile", "disassemble", "calls"],
+                        },
+                        "limit": {"type": "integer", "default": 100, "description": "Maximum results per function view."},
+                        "timeout": {"type": "integer", "default": 60, "description": "Decompilation timeout in seconds."},
+                    },
+                    "required": [],
+                },
+            ),
+        ]
 
     async def _handle_list(self, args: dict[str, Any]) -> list[types.TextContent]:
         """List functions in the current program, with optional filtering and pagination.
