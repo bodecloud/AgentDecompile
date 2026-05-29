@@ -461,6 +461,7 @@ _MUTATING_UI_HINT_TOOLS: frozenset[str] = frozenset(
         "managecomments",
         "managestructures",
         "manageenums",
+        "managedatatypes",
         "applydatatype",
         "managebookmarks",
         "managefunctiontags",
@@ -480,6 +481,7 @@ _MUTATING_TOOL_ACTIONS: dict[str, frozenset[str]] = {
             "delete",
         },
     ),
+    "managedatatypes": frozenset({"create", "delete", "apply"}),
 }
 
 

@@ -159,6 +159,7 @@ _AUTO_CHECKIN_TRIGGER_TOOLS: frozenset[str] = frozenset(
         "managecomments",
         "managestructures",
         "manageenums",
+        "managedatatypes",
         "applydatatype",
         "managebookmarks",
         "managefunctiontags",

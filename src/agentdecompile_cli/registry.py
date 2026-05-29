@@ -416,7 +416,7 @@ _TOOL_PARAMS_STR: dict[str, list[str]] = {
     Tool.LIST_STRINGS.value: _params("programPath", "filter", "maxResults", "offset"),
     Tool.MANAGE_BOOKMARKS.value: _params("programPath", "mode", "addressOrSymbol", "type", "category", "comment", "bookmarks", "searchText", "maxResults", "removeAll", "addressRange", "categories", "types"),
     Tool.MANAGE_COMMENTS.value: _params("programPath", "mode", "addressOrSymbol", "function", "lineNumber", "comment", "commentType", "comments", "start", "end", "commentTypes", "searchText", "pattern", "caseSensitive", "maxResults", "overrideMaxFunctionsLimit", "addressRange"),
-    Tool.MANAGE_DATA_TYPES.value: _params("programPath", "mode", "archiveName", "categoryPath", "includeSubcategories", "startIndex", "maxCount", "offset", "limit", "dataTypeString", "addressOrSymbol"),
+    Tool.MANAGE_DATA_TYPES.value: _params("programPath", "mode", "archiveName", "categoryPath", "includeSubcategories", "startIndex", "maxCount", "offset", "limit", "dataTypeString", "addressOrSymbol", "name", "description"),
     Tool.MANAGE_ENUMS.value: _params(
         "programPath",
         "mode",
@@ -670,6 +670,8 @@ NON_ADVERTISED_TOOL_ALIASES: dict[str, str] = {
     # manage-data-types overloads
     "get-data-type-archives": Tool.MANAGE_DATA_TYPES.value,
     "get-data-type-by-string": Tool.MANAGE_DATA_TYPES.value,
+    "create-data-type": Tool.MANAGE_DATA_TYPES.value,
+    "delete-data-type": Tool.MANAGE_DATA_TYPES.value,
     # manage-function overloads/legacy
     "rename-function": Tool.MANAGE_FUNCTION.value,
     "rename-function-by-address": Tool.MANAGE_FUNCTION.value,
