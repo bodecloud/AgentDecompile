@@ -88,7 +88,20 @@ Optional polish from P1-1 review — status:
 
 ## P2-5 / P2-6 variable handlers (PR #92) — Done
 
-All tracked agent-native CRUD gaps from the 2026-05-24 audit are implemented. Optional future work (not blocking): Ghidra integration test for variable rename persistence; proactive empty-session hints (audit Capability Discovery §3).
+All tracked agent-native CRUD gaps from the 2026-05-24 audit are implemented.
+
+## Discovery arc (PRs #96–#100) — pending merge
+
+| PR | Gap | Status |
+|----|-----|--------|
+| [#96](https://github.com/bolabaden/AgentDecompile/pull/96) | Proactive empty-session hints | Ready |
+| [#97](https://github.com/bolabaden/AgentDecompile/pull/97) | Auto-checkin outcome footer | Ready |
+| [#99](https://github.com/bolabaden/AgentDecompile/pull/99) | MCP initialize instructions preamble | Ready |
+| [#100](https://github.com/bolabaden/AgentDecompile/pull/100) | Variable rename Ghidra integration test | Ready |
+
+Audit sync: [agent-native-discovery-arc.md](../solutions/architecture-patterns/agent-native-discovery-arc.md) · Capability Discovery target **7/7** after merge.
+
+**Residual actionable work: none** (optional items addressed on branches above).
 
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 
