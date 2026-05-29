@@ -42,6 +42,8 @@ flowchart TD
 
 **Overall agent-native score (mean of percentages): ~76%**
 
+**CRUD arc:** open stack PR #105 + #106 → **impl/crud-arc-stack-c2bc** (strings 4/4, data-type catalog create/delete). See [agent-native-crud-arc.md](../solutions/architecture-patterns/agent-native-crud-arc.md).
+
 **Discovery arc:** merged squash **`d3c0c4e`** ([PR #102](https://github.com/bolabaden/AgentDecompile/pull/102)) — empty-session hints, auto-checkin footer, initialize preamble, variable-rename integration test, audit sync. See [agent-native-discovery-arc.md](../solutions/architecture-patterns/agent-native-discovery-arc.md).
 
 ### Status legend
@@ -160,7 +162,7 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 
 ## CRUD Completeness Audit
 
-**Score: 9/12 entities with full CRUD (75%)**
+**Score: 10/12 entities with full CRUD (83%)**
 
 | Entity | C | R | U | D | Score |
 |--------|---|---|---|---|-------|
@@ -173,7 +175,7 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 | VC checkout state | ✅ | ✅ | ✅ | ✅ | Full |
 | Symbols/labels | ✅ | ✅ | ✅ | ✅ | Full |
 | Function tags | ✅ | ✅ | ⚠️ | ✅ | 3/4 |
-| Data types (catalog) | ❌ | ✅ | ⚠️ | ❌ | 2/4 |
+| Data types (catalog) | ✅ | ✅ | ⚠️ | ✅ | 3/4 |
 | Strings | ✅ | ✅ | ✅ | ✅ | Full |
 | Enums | ✅ | ✅ | ✅ | ✅ | Full |
 
@@ -181,7 +183,7 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 
 - ~~**Variable rename / local type** — registry params existed; handlers missing on `manage-function`.~~ **Done (PR #92)** — `rename_variable`, `set_variable_type`, `change_datatypes` modes; see [decompiler-variable-mutations.md](../solutions/architecture-patterns/decompiler-variable-mutations.md).
 
-Remaining CRUD gaps (unchanged): data-type catalog create.
+Remaining CRUD gaps: generic data-type catalog update/edit; function-tag update partial.
 
 ---
 
