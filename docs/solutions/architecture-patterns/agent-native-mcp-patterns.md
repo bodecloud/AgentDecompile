@@ -62,6 +62,12 @@ Registry: **66 canonical**, **4 GUI-only hidden**, **62 advertised** by default.
 
 `.cursor/commands/help.md` (workflow) and `.cursor/commands/capabilities.md` (full inventory) for agent capability discovery without MCP initialize preamble.
 
+### 6. Auto-checkin outcome footer
+
+`summarize_auto_checkin_result()` merges silent `checkin-program` outcomes into mutating tool responses — `autoCheckin` JSON field and markdown `### Auto Check-in` footer when `AGENTDECOMPILE_AUTO_CHECKIN` is enabled.
+
+**Files:** `program_metadata.py`, `tool_providers.py`, `response_formatter.py`, `tests/test_auto_checkin_footer.py` — see [auto-checkin-response-footer.md](auto-checkin-response-footer.md)
+
 ## Prevention
 
 - When adding tools to `Tool` enum, update dynamic parity test — not hardcoded counts.

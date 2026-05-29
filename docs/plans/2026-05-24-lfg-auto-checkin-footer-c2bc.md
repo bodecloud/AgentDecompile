@@ -1,7 +1,7 @@
 ---
 title: LFG — Surface auto-checkin in mutating tool response footer
 type: feat
-status: active
+status: completed
 date: 2026-05-24
 branch: impl/auto-checkin-footer-c2bc
 origin: docs/audits/2026-05-24-agent-native-audit.md
