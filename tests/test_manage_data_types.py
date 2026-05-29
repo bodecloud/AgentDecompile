@@ -23,6 +23,7 @@ def test_manage_data_types_schema_includes_catalog_modes() -> None:
     manage = next(tool for tool in tools if tool.name == Tool.MANAGE_DATA_TYPES.value)
     mode_enum = manage.inputSchema["properties"]["mode"]["enum"]
     assert "create" in mode_enum
+    assert "update" in mode_enum
     assert "delete" in mode_enum
     assert "info" in mode_enum
 
@@ -35,13 +36,14 @@ def test_manage_data_types_handler_is_registered() -> None:
 
 @pytest.mark.unit
 def test_manage_data_types_aliases_resolve() -> None:
-    for alias in ("create-data-type", "delete-data-type"):
+    for alias in ("create-data-type", "update-data-type", "delete-data-type"):
         assert resolve_tool_name(alias) == Tool.MANAGE_DATA_TYPES.value
 
 
 @pytest.mark.unit
 def test_payload_has_mutating_action_manage_data_types() -> None:
     assert payload_has_mutating_action("managedatatypes", {"action": "create"})
+    assert payload_has_mutating_action("managedatatypes", {"action": "update"})
     assert payload_has_mutating_action("managedatatypes", {"action": "apply"})
     assert not payload_has_mutating_action("managedatatypes", {"action": "list"})
     assert not payload_has_mutating_action("managedatatypes", {"action": "info"})
@@ -83,6 +85,16 @@ async def test_manage_data_types_create_typedef_persists(ghidra_initialized, dat
 
     dt = find_catalog_data_type(program.getDataTypeManager(), "AgentTestUInt", "/")
     assert dt is not None
+
+    update_result = await provider._update(
+        {"mode": "update", "name": "AgentTestUInt", "categoryPath": "/", "description": "agent test uint"},
+    )
+    update_payload = json.loads(update_result[0].text)
+    assert update_payload["success"] is True
+    assert update_payload["action"] == "update"
+    updated = find_catalog_data_type(program.getDataTypeManager(), "AgentTestUInt", "/")
+    assert updated is not None
+    assert updated.getDescription() == "agent test uint"
 
     delete_result = await provider._delete({"mode": "delete", "name": "AgentTestUInt", "categoryPath": "/"})
     delete_payload = json.loads(delete_result[0].text)
