@@ -1,6 +1,6 @@
 ---
 title: LFG — Discovery arc audit sync closeout
-status: active
+status: completed
 type: chore
 date: 2026-05-24
 branch: impl/discovery-arc-audit-sync-c2bc
