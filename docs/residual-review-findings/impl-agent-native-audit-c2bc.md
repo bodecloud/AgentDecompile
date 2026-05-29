@@ -101,15 +101,27 @@ Capability Discovery **7/7** on `master`. Compound: [agent-native-discovery-arc.
 
 **Residual actionable work: none.**
 
-## CRUD arc — mega-stack (open)
+## CRUD arc — mega-stack (PR #111)
 
 | Item | Status |
 |------|--------|
-| `impl/crud-mega-stack-c2bc` | **Open** — merge to `master` (supersedes #107, #109, #110) |
-| [#107](https://github.com/bolabaden/AgentDecompile/pull/107)–[#110](https://github.com/bolabaden/AgentDecompile/pull/110) | Superseded by mega-stack |
+| [#111](https://github.com/bolabaden/AgentDecompile/pull/111) mega-stack | **Open** — squash merge to `master` |
+| [#112](https://github.com/bolabaden/AgentDecompile/pull/112) hygiene docs | Open (optional; supersedes #108) |
+| [#107](https://github.com/bolabaden/AgentDecompile/pull/107)–[#110](https://github.com/bolabaden/AgentDecompile/pull/110) | Superseded by #111 — close when convenient |
 | [#105](https://github.com/bolabaden/AgentDecompile/pull/105)–[#106](https://github.com/bolabaden/AgentDecompile/pull/106) | Superseded by mega-stack lineage |
 
-CRUD completeness **12/12 (100%)** when mega-stack lands. Compound: [agent-native-crud-arc.md](../solutions/architecture-patterns/agent-native-crud-arc.md).
+CRUD completeness **12/12 (100%)** when #111 lands. Compound: [agent-native-crud-arc.md](../solutions/architecture-patterns/agent-native-crud-arc.md).
+
+### Ship gate (PR #111)
+
+- [x] Strings, catalog, function-tags CRUD modes implemented
+- [x] Audit updated to 12/12 on branch
+- [x] `uv run pytest -m unit -q --timeout=120` — 254 passed locally
+- [x] `ruff check` on CRUD provider paths — clean
+- [ ] CI green on #111
+- [ ] Squash merge #111 to `master`
+- [ ] Post-merge closeout (residual **Merged**, compound doc merge SHA)
+- [ ] Close superseded #105–#110, #108
 
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 

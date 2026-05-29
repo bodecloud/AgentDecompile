@@ -28,9 +28,9 @@ tags:
 
 The 2026-05-24 audit listed **strings CRUD**, **data-type catalog create**, **catalog update**, and **function-tag set** as remaining gaps across `manage-strings`, `manage-data-types`, and `manage-function-tags`.
 
-## Solution (mega-stack PR)
+## Solution (mega-stack PR #111)
 
-Branch **`impl/crud-mega-stack-c2bc`** — single squash merge to `master`, supersedes #105–#110.
+Branch **`impl/crud-mega-stack-c2bc`**. **Ship PR:** [#111](https://github.com/bolabaden/AgentDecompile/pull/111) — single squash merge to `master`; supersedes #105–#110.
 
 ```mermaid
 flowchart LR
