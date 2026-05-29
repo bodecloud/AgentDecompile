@@ -1,7 +1,7 @@
 ---
 title: LFG — CRUD arc stack (#105 strings + #106 data-types catalog)
 type: chore
-status: active
+status: completed
 date: 2026-05-24
 branch: impl/crud-arc-stack-c2bc
 origin: docs/audits/2026-05-24-agent-native-audit.md
