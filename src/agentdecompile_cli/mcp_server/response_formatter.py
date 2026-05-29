@@ -3211,6 +3211,22 @@ def render_tool_response(normalized_tool_name: str, data: dict[str, Any]) -> str
             lines.append("")
             lines.append(str(gui_hint))
 
+    auto_checkin: dict[str, Any] | None = data.get("autoCheckin") if isinstance(data, dict) else None
+    if isinstance(auto_checkin, dict) and auto_checkin.get("performed"):
+        lines.append("")
+        lines.append(_md_heading(3, "Auto Check-in"))
+        succeeded_count = auto_checkin.get("succeededCount", 0)
+        failed_count = auto_checkin.get("failedCount", 0)
+        status_word = "succeeded" if auto_checkin.get("success") else "had issues"
+        lines.append(
+            f"Automatic persistence after mutation **{status_word}** "
+            f"({succeeded_count} ok, {failed_count} failed).",
+        )
+        ac_hint = auto_checkin.get("hint")
+        if ac_hint:
+            lines.append("")
+            lines.append(str(ac_hint))
+
     if guidance:
         description, next_steps_fn = guidance
         lines.append("")
