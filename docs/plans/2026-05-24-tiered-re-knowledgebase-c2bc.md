@@ -48,8 +48,11 @@ python3 scripts/validate-frontmatter.py docs/solutions/architecture-patterns/tie
 uv run pytest -m unit -q --timeout=120
 ```
 
+## Follow-up (LFG 2026-05-29)
+
+- **`analysis_tier` on `ToolMetadata`** — implemented in PR #62 follow-up commit; see `docs/plans/2026-05-29-lfg-pr62-analysis-tier-c2bc.md`
+
 ## Out of scope (future)
 
-- `primitive_tier` on `Tool` enum
 - MCP wrappers for capa/yara/binwalk
 - `agentdecompile://capabilities` resource with tier metadata

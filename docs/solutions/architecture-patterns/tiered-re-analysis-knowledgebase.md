@@ -181,14 +181,27 @@ Run **Scout (Tier 0–2)** before **Diver (Tier 3)** on cold binaries.
 | Mutating without Critic review | Run RE Critic on high-priority functions |
 | Ignoring analysis gate timeouts | Fix with `analyze-program` or increase `timeout` |
 
-## Future extensions (not yet MCP tools)
+## Registry metadata (`analysis_tier`)
+
+Every canonical MCP tool exposes **`analysis_tier`** via `get_tool_metadata()` and the OpenAPI/tool-reference payload (`server.py`):
+
+| Value | Meaning |
+|-------|---------|
+| **2** | Ghidra MCP read-only / session bootstrap (prefer before decompile) |
+| **3** | Deep analysis, workflow bundles, or mutating tools |
+
+Tier 0–1 remain shell/`ghidrecomp` paths documented above; they are not MCP tools.
+
+Implementation: `_TIER3_GHIDRA_TOOLS` and `get_tool_analysis_tier()` in `registry.py`; tests in `tests/test_tool_analysis_tier.py`.
+
+## Future extensions
 
 Track in plans; prefer Tier 0 wrappers before new Ghidra providers:
 
 - MCP or CLI wrappers for `capa`, `yara`, `binwalk` with unified JSON schema
-- `primitive_tier` metadata on `Tool` enum for client-side filtering (audit item)
 - `agentdecompile://capabilities` resource listing tier per tool
 - Tier 1 MCP facade over `ghidrecomp` subcommands for agents without shell
+- Optional runtime filter on `tools/list` by max tier
 
 ## Related docs
 
