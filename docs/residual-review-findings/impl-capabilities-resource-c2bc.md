@@ -14,7 +14,7 @@ plan: docs/plans/2026-05-24-lfg-capabilities-resource-c2bc.md
 | MCP | `agentdecompile://capabilities` resource |
 | Code | `CapabilitiesResource`, `mcp_utils/tool_reference.py` |
 | Registry | `ResourceUri.CAPABILITIES` |
-| Tests | `tests/test_capabilities_resource.py` (5 tests) |
+| Tests | `tests/test_capabilities_resource.py` (7 tests) |
 | Docs | `/capabilities` command, KB future-extensions marked done |
 
 ## Residual actionable work

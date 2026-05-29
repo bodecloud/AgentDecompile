@@ -1,7 +1,7 @@
 ---
 title: LFG — Tier 0–1 capabilities verification + arc closeout
 type: feat
-status: active
+status: completed
 date: 2026-05-30
 branch: impl/tier01-capabilities-verify-c2bc
 ---
