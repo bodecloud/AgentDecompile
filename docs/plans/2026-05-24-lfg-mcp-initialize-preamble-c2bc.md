@@ -1,6 +1,6 @@
 ---
 title: LFG — MCP initialize instructions preamble
-status: active
+status: completed
 type: feat
 date: 2026-05-24
 branch: impl/mcp-initialize-preamble-c2bc
