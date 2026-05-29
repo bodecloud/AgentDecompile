@@ -92,7 +92,7 @@ def test_build_decomp_match_objdiff_report_parsed(
         "units": [
             {
                 "name": "d_a_wall",
-                "measures": {"matched_percent": 42.5, "total_functions": 10, "matched_functions": 4},
+                "measures": {"fuzzy_match_percent": 42.5, "total_functions": 10, "matched_functions": 4},
                 "functions": [
                     {"name": "fn_a", "fuzzy_match_percent": 100.0, "size": 32},
                     {"name": "fn_b", "fuzzy_match_percent": 80.0, "size": 64},
@@ -123,7 +123,7 @@ def test_build_decomp_match_objdiff_100_percent_suggests_tier1(
         "units": [
             {
                 "name": "tu",
-                "measures": {"matched_percent": 100.0},
+                "measures": {"fuzzy_match_percent": 100.0},
                 "functions": [{"name": "fn", "fuzzy_match_percent": 100.0, "size": 8}],
             }
         ]
@@ -183,6 +183,38 @@ def test_build_decomp_match_unsupported_tool_raises() -> None:
         build_decomp_match_payload(tool="radare2")
 
 
+def test_build_decomp_match_permuter_requires_dir() -> None:
+    with pytest.raises(ValueError, match="permuterDir"):
+        build_decomp_match_payload(tool="permuter")
+
+
+def test_build_decomp_match_objdiff_diff_project_requires_unit_or_symbol(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    project = tmp_path / "decomp"
+    project.mkdir()
+    monkeypatch.setattr("agentdecompile_cli.mcp_utils.decomp_match.shutil.which", lambda name: f"/usr/bin/{name}")
+    with pytest.raises(ValueError, match="unitName or symbol"):
+        build_decomp_match_payload(
+            tool="objdiff",
+            project_path=project,
+            objdiff_mode="diff",
+        )
+
+
+def test_analysis_gate_exempt_run_decomp_match() -> None:
+    from agentdecompile_cli.mcp_utils.program_analysis import analysis_gate_exempt_tool
+
+    assert analysis_gate_exempt_tool("rundecompmatch") is True
+
+
+def test_run_decomp_match_advertised_with_max_tier_two(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AGENTDECOMPILE_MAX_ANALYSIS_TIER", "2")
+    listed = get_advertised_tools_for_list()
+    assert Tool.RUN_DECOMP_MATCH.value in listed
+
+
 @pytest.mark.asyncio
 async def test_provider_run_decomp_match_m2c(
     sample_asm: Path,
@@ -192,16 +224,18 @@ async def test_provider_run_decomp_match_m2c(
     provider = DecompMatchToolProvider(program_info=None)
     raw_args = {"tool": "m2c", "assemblyPath": str(sample_asm), "functionName": "test"}
     result = await provider._handle_run_decomp_match({n(k): v for k, v in raw_args.items()})
-    text = result[0].text or ""
-    assert "m2c" in text
+    payload = json.loads(result[0].text)
+    assert payload["action"] == "run-decomp-match"
+    assert payload["tool"] == "m2c"
 
 
 @pytest.mark.asyncio
 async def test_provider_run_decomp_match_missing_tool_or_tools() -> None:
     provider = DecompMatchToolProvider(program_info=None)
     result = await provider._handle_run_decomp_match({})
-    text = result[0].text or ""
-    assert "tool or tools is required" in text.lower() or "error" in text.lower()
+    payload = json.loads(result[0].text)
+    assert payload["success"] is False
+    assert "tool or tools is required" in payload["error"].lower()
 
 
 def test_run_decomp_match_advertised() -> None:
