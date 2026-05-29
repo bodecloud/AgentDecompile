@@ -62,6 +62,12 @@ Registry: **66 canonical**, **4 GUI-only hidden**, **62 advertised** by default.
 
 `.cursor/commands/help.md` (workflow) and `.cursor/commands/capabilities.md` (full inventory) for agent capability discovery without MCP initialize preamble.
 
+### 6. Proactive empty-session bootstrap hints
+
+`enrich_empty_session_payload()` on `list-project-files` and `get-current-program` when no project/programs are loaded — `sessionEmpty`, `sessionHint`, and bootstrap `nextSteps` in JSON and markdown.
+
+**Files:** `response_formatter.py`, `providers/project.py`, `tests/test_empty_session_hints.py` — see [empty-session-bootstrap-hints.md](empty-session-bootstrap-hints.md)
+
 ## Prevention
 
 - When adding tools to `Tool` enum, update dynamic parity test — not hardcoded counts.

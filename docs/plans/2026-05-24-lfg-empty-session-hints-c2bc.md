@@ -1,10 +1,11 @@
 ---
 title: LFG — Proactive empty-session hints on project discovery tools
 type: feat
-status: active
+status: completed
 date: 2026-05-24
 branch: impl/empty-session-hints-c2bc
-origin: docs/audits/2026-05-24-agent-native-audit.md
+origin: docs/plans/2026-05-24-lfg-empty-session-hints-c2bc.md
+pr: https://github.com/bolabaden/AgentDecompile/pull/96
 ---
 
 # LFG — Proactive empty-session hints on project discovery tools
