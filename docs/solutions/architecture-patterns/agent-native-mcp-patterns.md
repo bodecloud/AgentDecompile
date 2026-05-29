@@ -62,6 +62,12 @@ Registry: **66 canonical**, **4 GUI-only hidden**, **62 advertised** by default.
 
 `.cursor/commands/help.md` (workflow) and `.cursor/commands/capabilities.md` (full inventory) for agent capability discovery without MCP initialize preamble.
 
+### 6. MCP initialize instructions preamble
+
+`build_initialize_instructions()` injects tiered bootstrap, discovery URIs, and session rules into `InitializeResult.instructions` at MCP connect — HTTP server and stdio bridge share one builder.
+
+**Files:** `mcp_utils/tool_reference.py`, `mcp_server/server.py`, `bridge.py`, `tests/test_initialize_instructions.py` — see [mcp-initialize-instructions-preamble.md](mcp-initialize-instructions-preamble.md)
+
 ## Prevention
 
 - When adding tools to `Tool` enum, update dynamic parity test — not hardcoded counts.

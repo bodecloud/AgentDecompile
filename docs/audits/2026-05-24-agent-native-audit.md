@@ -37,10 +37,10 @@ flowchart TD
 | Shared Workspace | 12/14 stores shared | 86% (6/6 persisted RE data) | ✅ |
 | CRUD Completeness | 9/12 entities full CRUD | 75% | ⚠️ |
 | UI Integration | 18/23 deferred GUI visibility | 78% deferred; 0% live | ⚠️ |
-| Capability Discovery | 5/7 mechanisms | 71% | ⚠️ |
+| Capability Discovery | 6/7 mechanisms | 86% | ✅ |
 | Prompt-Native Features | 1/6 audited features | 17% | ❌ |
 
-**Overall agent-native score (mean of percentages): ~74%**
+**Overall agent-native score (mean of percentages): ~75%**
 
 ### Status legend
 
@@ -128,7 +128,7 @@ flowchart TD
 1. ~~Extend `collect_project_context()` with `analysisComplete` and compact `checkoutSummary`.~~ **Done (PR #49)**
 2. ~~Inject slim `projectContext` on **error** responses (analysis timeout, no program).~~ **Done (PR #49)**
 3. Implement MCP **`prompts/get`** with live session substitution.
-4. Add initialize instructions or `agentdecompile://capabilities` resource.
+4. ~~Add initialize instructions or `agentdecompile://capabilities` resource.~~ **Done** — `agentdecompile://capabilities` resource (PR #64) plus MCP `initialize` instructions preamble.
 
 ---
 
@@ -207,14 +207,14 @@ AgentDecompile uses a **headless MCP JVM** separate from CodeBrowser. Mutations 
 
 ## Capability Discovery Audit
 
-**Score: 5/7 (71%)**
+**Score: 6/7 (86%)**
 
 | Mechanism | Status |
 |-----------|--------|
 | Onboarding docs | ✅ README, AGENTS.md, cli_agent_help |
 | Help docs | ✅ TOOLS_LIST.md, OpenAPI `/docs` |
 | UI hints | ✅ TOOL_GUIDANCE, nextSteps |
-| Agent self-describes | ⚠️ per-tool; no initialize preamble |
+| Agent self-describes | ✅ initialize preamble + per-tool hints; `resources/read` → capabilities |
 | Suggested prompts | ✅ 9 MCP prompts; **`prompts/get` implemented** (session substitution) |
 | Empty state | ⚠️ reactive errors only |
 | Slash commands | ✅ `/help`, `/capabilities`, `/lfg` (proof) |
