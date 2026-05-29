@@ -1,6 +1,6 @@
 ---
 title: LFG — Discovery arc stack branch (single merge PR)
-status: active
+status: completed
 type: chore
 date: 2026-05-24
 branch: impl/discovery-arc-stack-c2bc
