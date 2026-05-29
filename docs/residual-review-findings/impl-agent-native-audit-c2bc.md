@@ -90,19 +90,18 @@ Optional polish from P1-1 review — status:
 
 All tracked agent-native CRUD gaps from the 2026-05-24 audit are implemented.
 
-## Discovery arc (PRs #96–#101) — pending merge
+## Discovery arc — stack PR (supersedes #96–#101)
 
 | PR | Gap | Status |
 |----|-----|--------|
-| [#96](https://github.com/bolabaden/AgentDecompile/pull/96) | Proactive empty-session hints | Ready |
-| [#97](https://github.com/bolabaden/AgentDecompile/pull/97) | Auto-checkin outcome footer | Ready |
-| [#99](https://github.com/bolabaden/AgentDecompile/pull/99) | MCP initialize instructions preamble | Ready |
-| [#100](https://github.com/bolabaden/AgentDecompile/pull/100) | Variable rename Ghidra integration test | Ready |
-| [#101](https://github.com/bolabaden/AgentDecompile/pull/101) | Audit + residual sync (docs-only) | Ready |
+| **Stack** | Combined #96–#101 on `impl/discovery-arc-stack-c2bc` | Open |
+| [#96](https://github.com/bolabaden/AgentDecompile/pull/96) | Proactive empty-session hints | Superseded by stack |
+| [#97](https://github.com/bolabaden/AgentDecompile/pull/97) | Auto-checkin outcome footer | Superseded by stack |
+| [#99](https://github.com/bolabaden/AgentDecompile/pull/99) | MCP initialize instructions preamble | Superseded by stack |
+| [#100](https://github.com/bolabaden/AgentDecompile/pull/100) | Variable rename Ghidra integration test | Superseded by stack |
+| [#101](https://github.com/bolabaden/AgentDecompile/pull/101) | Audit + residual sync | Superseded by stack |
 
-**Merge order:** #96 → #97 → #99 → #100 → #101 (rebase #101 after features if audit conflicts).
-
-Audit sync: [agent-native-discovery-arc.md](../solutions/architecture-patterns/agent-native-discovery-arc.md) · Capability Discovery target **7/7** after merge.
+Audit sync: [agent-native-discovery-arc.md](../solutions/architecture-patterns/agent-native-discovery-arc.md) · Capability Discovery **7/7** on stack branch.
 
 **Residual actionable work: none** (optional items addressed on branches above).
 
