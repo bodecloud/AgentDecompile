@@ -90,7 +90,7 @@ Optional polish from P1-1 review — status:
 
 All tracked agent-native CRUD gaps from the 2026-05-24 audit are implemented.
 
-## Discovery arc (PRs #96–#100) — pending merge
+## Discovery arc (PRs #96–#101) — pending merge
 
 | PR | Gap | Status |
 |----|-----|--------|
@@ -98,6 +98,9 @@ All tracked agent-native CRUD gaps from the 2026-05-24 audit are implemented.
 | [#97](https://github.com/bolabaden/AgentDecompile/pull/97) | Auto-checkin outcome footer | Ready |
 | [#99](https://github.com/bolabaden/AgentDecompile/pull/99) | MCP initialize instructions preamble | Ready |
 | [#100](https://github.com/bolabaden/AgentDecompile/pull/100) | Variable rename Ghidra integration test | Ready |
+| [#101](https://github.com/bolabaden/AgentDecompile/pull/101) | Audit + residual sync (docs-only) | Ready |
+
+**Merge order:** #96 → #97 → #99 → #100 → #101 (rebase #101 after features if audit conflicts).
 
 Audit sync: [agent-native-discovery-arc.md](../solutions/architecture-patterns/agent-native-discovery-arc.md) · Capability Discovery target **7/7** after merge.
 

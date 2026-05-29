@@ -41,9 +41,10 @@ flowchart LR
   subgraph test [Test coverage]
     D[PR #100 rename integration]
   end
-  discovery --> E[Audit sync PR pending]
+  discovery --> E[Audit sync PR #101]
   ui --> E
   test --> E
+  E --> F[Merge to master]
 ```
 
 | PR | Deliverable | Key files |
@@ -52,6 +53,17 @@ flowchart LR
 | [#97](https://github.com/bolabaden/AgentDecompile/pull/97) | `autoCheckin` summary on mutating tools | `program_metadata.py`, `tool_providers.py` |
 | [#99](https://github.com/bolabaden/AgentDecompile/pull/99) | `InitializeResult.instructions` tiered preamble | `tool_reference.py`, `server.py`, `bridge.py` |
 | [#100](https://github.com/bolabaden/AgentDecompile/pull/100) | PyGhidra integration test for rename persistence | `tests/test_variable_rename_integration.py` |
+| [#101](https://github.com/bolabaden/AgentDecompile/pull/101) | Audit + residual sync to post-merge scores | `docs/audits/2026-05-24-agent-native-audit.md` |
+
+## Recommended merge order
+
+1. **#96** empty-session hints (no deps on other arc PRs)
+2. **#97** auto-checkin footer
+3. **#99** initialize preamble
+4. **#100** variable rename integration test
+5. **#101** audit sync (docs-only; merge after or rebase onto features)
+
+Rebase #101 onto `master` after #96–#100 land if audit sections conflict.
 
 ## Agent connect workflow (post-merge)
 
