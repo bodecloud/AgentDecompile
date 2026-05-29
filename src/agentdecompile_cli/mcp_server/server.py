@@ -48,7 +48,6 @@ from agentdecompile_cli.mcp_server.tool_providers import UnifiedToolProviderMana
 from agentdecompile_cli.mcp_utils.debug_logger import DebugLogger
 from agentdecompile_cli.mcp_utils.tool_reference import build_tool_reference_payload
 from agentdecompile_cli.registry import (
-    TOOLS,
     Tool,
 )
 
