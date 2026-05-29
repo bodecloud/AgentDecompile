@@ -376,6 +376,7 @@ TIER01_RUN_TOOLS = (
 )
 
 
+@pytest.mark.unit
 def test_all_tier01_run_tools_advertised() -> None:
     advertised = set(get_advertised_tools_for_list())
     missing = [name for name in TIER01_RUN_TOOLS if name not in advertised]

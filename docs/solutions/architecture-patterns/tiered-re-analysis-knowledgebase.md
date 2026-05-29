@@ -69,6 +69,8 @@ AgentDecompile implements a **Planner → Worker → Critic → Aggregator** pip
 
 | Technique | Example commands | Answers |
 |-----------|------------------|---------|
+| File triage (MCP) | `run-file-triage` (optional `externalScanTools` for capa/yara/binwalk) | Unified JSON: file type, sha256, strings, optional external scans |
+| External RE scan (MCP) | `run-external-re-scan` (`tool` or `tools` bundle) | capa/yara/binwalk results without Ghidra |
 | File metadata | `file`, `stat`, `sha256sum` | Format, bitness, integrity |
 | Strings | `strings -a`, `rg` on raw file | API names, URLs, error messages |
 | PE/ELF headers | `readelf -a`, `objdump -x`, `llvm-objdump -h` | Sections, imports (static), entry |
@@ -87,8 +89,6 @@ AgentDecompile implements a **Planner → Worker → Critic → Aggregator** pip
 
 | Technique | Entry point | Answers |
 |-----------|-------------|---------|
-| File triage (MCP) | `run-file-triage` (optional `externalScanTools` for capa/yara/binwalk) | Unified JSON: file type, sha256, strings, optional external scans |
-| External RE scan (MCP) | `run-external-re-scan` (`tool` or `tools` bundle) | capa/yara/binwalk results without Ghidra |
 | Batch decompile (MCP) | `run-batch-decompile` | C files for ripgrep/semgrep |
 | Call graph export | ghidrecomp / `gen-callgraph` after import | Mermaid/DOT graphs |
 | SAST on decomp (MCP) | `run-batch-sast-scan` or `ghidrecomp … --sast` | Vuln patterns in pseudocode |
