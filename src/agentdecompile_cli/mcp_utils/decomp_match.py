@@ -40,11 +40,16 @@ def _normalize_tools_list(tools: list[str] | None) -> list[str] | None:
     if not tools:
         return None
     normalized: list[str] = []
+    seen: set[str] = set()
     for item in tools:
         name = _normalize_tool_name(str(item))
         if name == "all":
-            normalized.extend(_DEFAULT_BUNDLE_TOOLS)
-        elif name not in normalized:
+            for bundled in _DEFAULT_BUNDLE_TOOLS:
+                if bundled not in seen:
+                    seen.add(bundled)
+                    normalized.append(bundled)
+        elif name not in seen:
+            seen.add(name)
             normalized.append(name)
     return normalized or None
 
@@ -209,14 +214,12 @@ def _build_objdiff_report_command(
     output_path: Path | None,
     working_dir: Path | None,
 ) -> list[str]:
-    binary = _resolve_binary("objdiff-cli", "objdiff")
+    binary = _resolve_binary("objdiff-cli")
     if binary is None:
         raise FileNotFoundError("objdiff-cli is not on PATH.")
     command = [binary, "report", "generate", "-p", str(project_path), "-f", "json"]
     if output_path is not None:
         command.extend(["-o", str(output_path)])
-    if working_dir is not None:
-        command[:0] = []  # chdir handled by caller
     return command
 
 
@@ -229,7 +232,7 @@ def _build_objdiff_diff_command(
     symbol: str | None,
     output_path: Path | None,
 ) -> list[str]:
-    binary = _resolve_binary("objdiff-cli", "objdiff")
+    binary = _resolve_binary("objdiff-cli")
     if binary is None:
         raise FileNotFoundError("objdiff-cli is not on PATH.")
     command = [binary, "diff", "-f", "json"]
@@ -399,8 +402,8 @@ def _build_objdiff_result(
     if mode == "report" and project_path is None:
         raise ValueError("projectPath is required for objdiff report mode.")
 
-    if _resolve_binary("objdiff-cli", "objdiff") is None:
-        return _missing_tool_result("objdiff", binaries=("objdiff-cli", "objdiff"))
+    if _resolve_binary("objdiff-cli") is None:
+        return _missing_tool_result("objdiff", binaries=("objdiff-cli",))
 
     cwd: Path | None = None
     if mode == "report":
@@ -412,6 +415,10 @@ def _build_objdiff_result(
     else:
         proj = project_path.expanduser().resolve() if project_path else None
         if proj is not None:
+            if not unit_name and not symbol:
+                raise ValueError(
+                    "objdiff diff mode with projectPath requires unitName or symbol."
+                )
             cwd = proj
             command = _build_objdiff_diff_command(
                 target_path=None,

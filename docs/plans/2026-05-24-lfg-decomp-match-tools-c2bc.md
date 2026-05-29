@@ -48,10 +48,10 @@ flowchart TD
 | R6 | Shared-project note: Ghidra for checkout/struct/check-in only | done |
 | R7 | Unit tests `tests/test_run_decomp_match.py`; tier/capabilities parity | done |
 | R8 | Tiered RE skill + KB updated | done |
-| R9 | `TOOLS_LIST.md` canonical entry for `run-decomp-match` | pending |
-| R10 | Compound doc `docs/solutions/architecture-patterns/decomp-matching-toolchain.md` | pending |
-| R11 | Discovery counts README/capabilities (67 canonical / 63 advertised) | pending |
-| R12 | `uv run pytest -m unit` green | verify |
+| R9 | `TOOLS_LIST.md` canonical entry for `run-decomp-match` | done |
+| R10 | Compound doc `docs/solutions/architecture-patterns/decomp-matching-toolchain.md` | done |
+| R11 | Discovery counts README/capabilities (67 canonical / 63 advertised) | done |
+| R12 | `uv run pytest -m unit` green | done |
 
 ## Scope boundaries
 
