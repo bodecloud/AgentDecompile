@@ -101,6 +101,22 @@ Capability Discovery **7/7** on `master`. Compound: [agent-native-discovery-arc.
 
 **Residual actionable work: none.**
 
+## CRUD mega-stack — open (PR #111)
+
+| Item | Status |
+|------|--------|
+| [#111](https://github.com/bolabaden/AgentDecompile/pull/111) mega-stack | **Open** — merge to `master` |
+| [#105](https://github.com/bolabaden/AgentDecompile/pull/105)–[#110](https://github.com/bolabaden/AgentDecompile/pull/110) | Superseded by #111 — close when convenient |
+| [#108](https://github.com/bolabaden/AgentDecompile/pull/108) hygiene (#107) | Superseded by this hygiene PR — close when convenient |
+
+When #111 lands: CRUD completeness **12/12 (100%)**. Compound: [agent-native-crud-arc.md](../solutions/architecture-patterns/agent-native-crud-arc.md).
+
+### Ship gate (mega-stack)
+
+- [ ] CI green on #111
+- [ ] Squash merge #111 to `master`
+- [ ] Close superseded #105–#110, #108
+
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 
 Follow-up polish after P2-1 ship (alias handlers + conflict overwrite addressed in review pass):
