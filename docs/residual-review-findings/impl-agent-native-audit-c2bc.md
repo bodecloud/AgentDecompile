@@ -101,6 +101,16 @@ Capability Discovery **7/7** on `master`. Compound: [agent-native-discovery-arc.
 
 **Residual actionable work: none.**
 
+## CRUD arc — stack (PR #105 + #106)
+
+| Item | Status |
+|------|--------|
+| [#105](https://github.com/bolabaden/AgentDecompile/pull/105) strings CRUD | Superseded by stack PR |
+| [#106](https://github.com/bolabaden/AgentDecompile/pull/106) data-types catalog | Superseded by stack PR |
+| Stack branch `impl/crud-arc-stack-c2bc` | Open — merge to `master` |
+
+CRUD completeness **10/12 (83%)** when landed. Compound: [agent-native-crud-arc.md](../solutions/architecture-patterns/agent-native-crud-arc.md).
+
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 
 Follow-up polish after P2-1 ship (alias handlers + conflict overwrite addressed in review pass):
