@@ -95,7 +95,7 @@ All tracked agent-native CRUD gaps from the 2026-05-24 audit are implemented.
 | Item | Status |
 |------|--------|
 | [#102](https://github.com/bolabaden/AgentDecompile/pull/102) stack (#96–#101) | **Merged** squash `d3c0c4e` on `master` |
-| [#96](https://github.com/bolabaden/AgentDecompile/pull/96)–[#101](https://github.com/bolabaden/AgentDecompile/pull/101) | Superseded by #102 — close when convenient |
+| [#96](https://github.com/bolabaden/AgentDecompile/pull/96)–[#101](https://github.com/bolabaden/AgentDecompile/pull/101) | Superseded by #102 — **manual close required** (cloud agent `gh` token lacks `closePullRequest`) |
 
 Capability Discovery **7/7** on `master`. Compound: [agent-native-discovery-arc.md](../solutions/architecture-patterns/agent-native-discovery-arc.md).
 
