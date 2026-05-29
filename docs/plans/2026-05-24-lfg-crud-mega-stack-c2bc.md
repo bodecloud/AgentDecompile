@@ -1,7 +1,7 @@
 ---
 title: LFG — CRUD mega-stack (#110 + #109)
 type: chore
-status: active
+status: completed
 date: 2026-05-24
 branch: impl/crud-mega-stack-c2bc
 origin: docs/audits/2026-05-24-agent-native-audit.md
