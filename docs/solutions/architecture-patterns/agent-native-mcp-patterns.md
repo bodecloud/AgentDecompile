@@ -68,6 +68,12 @@ Registry: **66 canonical**, **4 GUI-only hidden**, **62 advertised** by default.
 
 **Files:** `response_formatter.py`, `providers/project.py`, `tests/test_empty_session_hints.py` — see [empty-session-bootstrap-hints.md](empty-session-bootstrap-hints.md)
 
+### 7. Auto-checkin outcome footer
+
+`summarize_auto_checkin_result()` merges silent `checkin-program` outcomes into mutating tool responses — `autoCheckin` JSON field and markdown `### Auto Check-in` footer when `AGENTDECOMPILE_AUTO_CHECKIN` is enabled.
+
+**Files:** `program_metadata.py`, `tool_providers.py`, `response_formatter.py`, `tests/test_auto_checkin_footer.py` — see [auto-checkin-response-footer.md](auto-checkin-response-footer.md)
+
 ## Prevention
 
 - When adding tools to `Tool` enum, update dynamic parity test — not hardcoded counts.

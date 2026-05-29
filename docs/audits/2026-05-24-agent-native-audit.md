@@ -195,12 +195,12 @@ AgentDecompile uses a **headless MCP JVM** separate from CodeBrowser. Mutations 
 | File watching | ❌ |
 | Web UI listing mirror | ❌ (console only) |
 | Tool response feedback | ✅ (`uiVisibility` / `guiHint` on mutating tools) |
-| Auto-checkin (silent persist) | ⚠️ |
+| Auto-checkin (silent persist) | ✅ (`autoCheckin` footer on mutating tools when env enabled) |
 
 ### Recommendations
 
 1. ~~Add **`uiVisibility`** / `guiHint` on mutating tool responses.~~ **Done (PR #49)**
-2. Surface auto-checkin in response footer when env enabled.
+2. ~~Surface auto-checkin in response footer when env enabled.~~ **Done** — `autoCheckin` summary merged into mutating tool responses after silent `checkin-program`.
 3. ~~Document dual-JVM model in README.~~ **Done (PR #49)**
 
 ---
