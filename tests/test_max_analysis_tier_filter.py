@@ -60,6 +60,23 @@ def test_invalid_tier_env_ignored(monkeypatch: pytest.MonkeyPatch) -> None:
     assert Tool.DECOMPILE_FUNCTION.value in listed
 
 
+def test_legacy_env_alias_max_analysis_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AGENTDECOMPILE_MAX_ANALYSIS_TIER", raising=False)
+    monkeypatch.setenv("AGENT_DECOMPILE_MAX_ANALYSIS_TIER", "2")
+    assert get_effective_max_analysis_tier() == 2
+    assert Tool.DECOMPILE_FUNCTION.value not in get_advertised_tools_for_list()
+
+
+def test_invalid_header_falls_back_to_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AGENTDECOMPILE_MAX_ANALYSIS_TIER", "2")
+    token = CURRENT_REQUEST_MAX_ANALYSIS_TIER.set("invalid")
+    try:
+        assert get_effective_max_analysis_tier() == 2
+        assert Tool.DECOMPILE_FUNCTION.value not in get_advertised_tools_for_list()
+    finally:
+        CURRENT_REQUEST_MAX_ANALYSIS_TIER.reset(token)
+
+
 def test_tools_call_resolution_unaffected_by_list_filter(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AGENTDECOMPILE_MAX_ANALYSIS_TIER", "2")
     listed = get_advertised_tools_for_list()

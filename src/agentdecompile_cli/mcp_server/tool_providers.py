@@ -2338,7 +2338,7 @@ class ToolProviderManager:
         return results
 
     def list_tools(self) -> list[types.Tool]:
-        """Build the MCP tools/list response: merge all providers' tools, then return only ADVERTISED_TOOLS with normalized params and format option."""
+        """Build the MCP tools/list response: merge providers' tools, then return advertised tools (optionally tier-filtered) with normalized params and format option."""
         logger.debug("diag.enter %s", "mcp_server/tool_providers.py:ToolProviderManager.list_tools")
         provider_tools: list[types.Tool] = []
         for p in self.providers:
