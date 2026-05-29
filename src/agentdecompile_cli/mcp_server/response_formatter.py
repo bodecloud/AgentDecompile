@@ -756,8 +756,72 @@ def _next_steps_import_export(data: dict[str, Any]) -> list[str]:
     return steps
 
 
+_EMPTY_SESSION_HINT = (
+    "No Ghidra project or program is loaded in this MCP session. "
+    "Bootstrap before calling analysis tools."
+)
+
+
+def _empty_session_bootstrap_steps(data: dict[str, Any]) -> list[str]:
+    """Actionable bootstrap steps when the MCP session has no project or programs."""
+    available: list[str] = [
+        str(p)
+        for p in (data.get("availablePrograms") or [])
+        if p
+    ]
+    steps: list[str] = [
+        "No project or program is loaded in this MCP session.",
+        "Local binary: call `import-binary path=/path/to/binary` (open a Ghidra project with `open path=/path/to/project.gpr` first if needed).",
+        "Ghidra project: call `open path=/path/to/project.gpr`, or pass a binary as a positional arg to `agentdecompile-server` at startup.",
+        "Shared Ghidra Server: call `connect-shared-project` with serverHost, serverPort, and repository, then `checkout-program`.",
+        "After loading, call `analyze-program`, then explore with `list-functions` or `decompile-function`.",
+    ]
+    if available:
+        steps.insert(1, f"Or open an available program: `open path={available[0]}`.")
+    return steps
+
+
+def payload_indicates_empty_session(payload: dict[str, Any]) -> bool:
+    """True when the session has no project/programs (not merely an empty folder)."""
+    if payload.get("sessionEmpty") is True:
+        return True
+    note = str(payload.get("note") or "")
+    if note == "No project loaded":
+        return True
+    loaded = payload.get("loaded")
+    if loaded is False:
+        available_count = payload.get("availableCount")
+        if available_count is None:
+            available_count = len(payload.get("availablePrograms") or [])
+        if available_count == 0 and not payload.get("availablePrograms"):
+            return True
+    action = payload.get("action", payload.get("operation", ""))
+    if action == "list":
+        files: list[Any] = payload.get("files", payload.get("entries", [])) or []
+        if payload.get("count", len(files)) == 0 and note == "No project loaded":
+            return True
+    return False
+
+
+def enrich_empty_session_payload(payload: dict[str, Any], *, action: str | None = None) -> dict[str, Any]:
+    """Attach sessionEmpty, sessionHint, and nextSteps when the session has nothing loaded."""
+    if action:
+        payload.setdefault("action", action)
+    if not payload_indicates_empty_session(payload):
+        return payload
+    payload["sessionEmpty"] = True
+    payload["sessionHint"] = _EMPTY_SESSION_HINT
+    payload["nextSteps"] = _empty_session_bootstrap_steps(payload)
+    return payload
+
+
 def _next_steps_project(data: dict[str, Any]) -> list[str]:
     logger.debug("diag.enter %s", "mcp_server/response_formatter.py:_next_steps_project")
+    if data.get("nextSteps"):
+        return list(data["nextSteps"])
+    if data.get("sessionEmpty") or payload_indicates_empty_session(data):
+        return _empty_session_bootstrap_steps(data)
+
     action = data.get("action", data.get("operation", ""))
     loaded = data.get("loaded")
     steps: list[str] = []
@@ -769,7 +833,17 @@ def _next_steps_project(data: dict[str, Any]) -> list[str]:
         steps.append("Use `inspect-memory mode=blocks` to understand the memory layout.")
         steps.append("Use `get-references mode=import` to see import/library dependencies.")
     elif loaded is False:
-        steps.append("Project failed to load for some reason! Check the file path and format, and ensure the Ghidra project is set up correctly.")
+        available: list[str] = [str(p) for p in (data.get("availablePrograms") or []) if p]
+        if available:
+            steps.append(f"Open a program: `open path={available[0]}`.")
+            hint = data.get("hint")
+            if hint:
+                steps.append(str(hint))
+        else:
+            steps.append(
+                "Project failed to load for some reason! Check the file path and format, "
+                "and ensure the Ghidra project is set up correctly.",
+            )
     elif action == "list":
         files: list[dict[str, Any]] = data.get("files", data.get("entries", []))
         if files:
