@@ -30,6 +30,7 @@ from .suggestions import SuggestionToolProvider
 from .datatypes import DataTypeToolProvider
 from .dissect import GetFunctionAioToolProvider
 from .batch_analysis import BatchAnalysisToolProvider
+from .decomp_match import DecompMatchToolProvider
 from .prompts import PromptToolProvider
 from .static_analysis import StaticAnalysisToolProvider
 
@@ -44,6 +45,7 @@ __all__ = [
     "DataFlowToolProvider",
     "DataToolProvider",
     "DataTypeToolProvider",
+    "DecompMatchToolProvider",
     "DecompilerToolProvider",
     "FunctionToolProvider",
     "GetFunctionAioToolProvider",
