@@ -12,7 +12,7 @@ origin: docs/plans/2026-05-24-lfg-crud-mega-stack-ship-verify-c2bc.md
 
 ## Summary
 
-Complete the open ship-verify gates for PR **#111**: confirm remote CI (`pytest -m unit`), record result in residual docs, publish a durable merge-ready PR body artifact (since `gh pr edit` is token-blocked), and mark the ship-verify plan lineage complete when R5/R6 are satisfied or explicitly documented.
+Complete the open ship-verify gates for PR **#111**: confirm remote CI (`pytest -m unit`), record result in residual docs, publish a durable merge-ready PR body artifact (since `gh pr edit` is token-blocked), and mark the ship-verify plan lineage complete when ship-verify R6 is satisfied or explicitly documented.
 
 ```mermaid
 flowchart TD
@@ -28,7 +28,7 @@ flowchart TD
 
 ## Requirements
 
-- R1. Poll `gh pr checks 111` until `pytest -m unit` resolves (pass or documented failure).
+- R1. Poll `gh pr checks 111` until `pytest -m unit` resolves (pass, fail, or documented pending/queued with run URL).
 - R2. Update residual ship gate CI checkbox to match CI reality.
 - R3. Add merge-ready PR body markdown under `docs/` for manual paste (R5 fallback when `gh pr edit` blocked).
 - R4. Mark `docs/plans/2026-05-24-lfg-crud-mega-stack-ship-verify-c2bc.md` `status: completed` when R1–R3 done.
@@ -67,7 +67,7 @@ flowchart TD
 
 - U3. **Durable merge-ready PR body artifact**
 
-**Goal:** Satisfy R5 without `gh pr edit` — reviewers paste from repo.
+**Goal:** Satisfy ship-verify R5 fallback — durable PR body without `gh pr edit`.
 
 **Files:** Create `docs/pr-bodies/2026-05-29-pr111-crud-mega-stack-merge-ready.md`
 

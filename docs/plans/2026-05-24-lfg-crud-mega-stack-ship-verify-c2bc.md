@@ -19,7 +19,7 @@ PR **#111** implements the full CRUD arc (12/12) and is **MERGEABLE** on `master
 
 ## Problem Frame
 
-The merge-gate plan (`docs/plans/2026-05-24-lfg-crud-mega-stack-merge-gate-c2bc.md`) stamped local verification and linked PR #111 in residual/compound docs. One uncommitted local edit remains (merge-gate `status: completed`). Before human squash merge, we need a **fresh verification pass** and a **merge-ready PR surface** — no new feature work.
+The merge-gate plan (`docs/plans/2026-05-24-lfg-crud-mega-stack-merge-gate-c2bc.md`) stamped local verification and linked PR #111 in residual/compound docs. Before human squash merge, we need a **fresh verification pass** and a **merge-ready PR surface** — no new feature work.
 
 ---
 
@@ -253,6 +253,7 @@ flowchart TD
 - Implementation plan: [docs/plans/2026-05-24-lfg-crud-mega-stack-c2bc.md](docs/plans/2026-05-24-lfg-crud-mega-stack-c2bc.md)
 - Compound: [docs/solutions/architecture-patterns/agent-native-crud-arc.md](docs/solutions/architecture-patterns/agent-native-crud-arc.md)
 - Residual: [docs/residual-review-findings/impl-agent-native-audit-c2bc.md](docs/residual-review-findings/impl-agent-native-audit-c2bc.md)
+- CI gate: [docs/plans/2026-05-24-lfg-crud-mega-stack-ci-gate-c2bc.md](docs/plans/2026-05-24-lfg-crud-mega-stack-ci-gate-c2bc.md)
 - PR #111, hygiene PR #112
 
 ---

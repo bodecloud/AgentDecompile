@@ -1,4 +1,4 @@
-# PR #111 — merge-ready body (paste into GitHub)
+# PR #111 — merge-ready body (pending CI; paste into GitHub)
 
 **Branch:** `impl/crud-mega-stack-c2bc`  
 **Use when:** `gh pr edit 111` is blocked (cloud agent token lacks `updatePullRequest`).
