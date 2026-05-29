@@ -173,7 +173,7 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 | VC checkout state | ✅ | ✅ | ✅ | ✅ | Full |
 | Symbols/labels | ✅ | ✅ | ✅ | ✅ | Full |
 | Function tags | ✅ | ✅ | ⚠️ | ✅ | 3/4 |
-| Data types (catalog) | ❌ | ✅ | ⚠️ | ❌ | 2/4 |
+| Data types (catalog) | ✅ | ✅ | ⚠️ | ✅ | 3/4 |
 | Strings | ❌ | ✅ | ❌ | ❌ | 1/4 |
 | Enums | ✅ | ✅ | ✅ | ✅ | Full |
 
@@ -181,7 +181,7 @@ Ghidra `Program` DB, local `.gpr`, Ghidra Server programs, `ProgramInfo.domain_f
 
 - ~~**Variable rename / local type** — registry params existed; handlers missing on `manage-function`.~~ **Done (PR #92)** — `rename_variable`, `set_variable_type`, `change_datatypes` modes; see [decompiler-variable-mutations.md](../solutions/architecture-patterns/decompiler-variable-mutations.md).
 
-Remaining CRUD gaps (unchanged): data-type catalog create, strings CRUD.
+Remaining CRUD gaps: strings CRUD (PR #105), generic data-type catalog update/edit.
 
 ---
 
