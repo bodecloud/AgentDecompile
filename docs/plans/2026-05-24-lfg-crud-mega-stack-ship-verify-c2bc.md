@@ -1,7 +1,7 @@
 ---
 title: LFG — CRUD mega-stack final ship verification (PR #111)
 type: chore
-status: completed
+status: active
 date: 2026-05-24
 branch: impl/crud-mega-stack-c2bc
 pr: https://github.com/bolabaden/AgentDecompile/pull/111

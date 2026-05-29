@@ -118,9 +118,10 @@ Ship verify plan: [2026-05-24-lfg-crud-mega-stack-ship-verify-c2bc.md](../plans/
 
 - [x] Strings, catalog, function-tags CRUD modes implemented
 - [x] Audit updated to 12/12 on branch
-- [x] `uv run pytest -m unit -q --timeout=120` — 254 passed locally (re-verified 2026-05-24)
-- [x] CRUD trio unit tests — 17 passed locally (re-verified 2026-05-24)
-- [x] `ruff check` on CRUD provider paths — clean (re-verified 2026-05-24)
+- [x] `uv run pytest -m unit -q --timeout=120` — 254 passed locally (re-verified 2026-05-29)
+- [x] CRUD trio unit tests — 17 passed locally (re-verified 2026-05-29)
+- [x] `ruff check` on CRUD provider paths — clean (re-verified 2026-05-29)
+- [ ] PR #111 body merge-ready refresh (`gh pr edit` blocked — use `.pr111-body.md` locally)
 - [ ] CI green on #111
 - [ ] Squash merge #111 to `master`
 - [ ] Post-merge closeout (residual **Merged**, compound doc merge SHA)
