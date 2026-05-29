@@ -88,7 +88,7 @@ Optional polish from P1-1 review — status:
 
 ## P2-5 / P2-6 variable handlers (PR #92) — Done
 
-All tracked agent-native CRUD gaps from the 2026-05-24 audit are implemented. Optional future work (not blocking): ~~Ghidra integration test for variable rename persistence~~ **Done** (`tests/test_variable_rename_integration.py`); proactive empty-session hints (audit Capability Discovery §3, PR #96).
+All tracked agent-native CRUD gaps from the 2026-05-24 audit are implemented. Optional future work (not blocking): ~~Ghidra integration test for variable rename persistence~~ **Done** (PR #100); ~~proactive empty-session hints~~ **Done** (PR #96).
 
 ## Residual Review Findings (P2-1 manage-enums review c1641e4)
 
