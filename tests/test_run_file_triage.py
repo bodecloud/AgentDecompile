@@ -9,7 +9,7 @@ import pytest
 
 from agentdecompile_cli.mcp_server.providers.static_analysis import StaticAnalysisToolProvider
 from agentdecompile_cli.mcp_server.tool_providers import n
-from agentdecompile_cli.mcp_utils.static_triage import build_file_triage_payload
+from agentdecompile_cli.mcp_utils.static_triage import _merge_tier_escalation, build_file_triage_payload
 from agentdecompile_cli.registry import Tool, get_tool_analysis_tier
 
 pytestmark = pytest.mark.unit
@@ -41,6 +41,7 @@ def test_build_file_triage_payload_core_fields(sample_binary: Path) -> None:
     assert "values" in payload["strings"]
     assert payload["optionalTools"] == {}
     assert "recommendedTier" in payload["suggestedTierEscalation"]
+    assert "externalScans" not in payload
 
 
 def test_build_file_triage_payload_string_filter(sample_binary: Path) -> None:
@@ -94,6 +95,22 @@ def test_run_file_triage_advertised_with_max_tier_two(monkeypatch: pytest.Monkey
     monkeypatch.setenv("AGENTDECOMPILE_MAX_ANALYSIS_TIER", "2")
     listed = get_advertised_tools_for_list()
     assert Tool.RUN_FILE_TRIAGE.value in listed
+
+
+def test_merge_tier_escalation_prefers_higher_bundle_tier() -> None:
+    triage = {"recommendedTier": 0, "reason": "archive"}
+    bundle = {"suggestedTierEscalation": {"recommendedTier": 2, "reason": "capa findings"}}
+    merged = _merge_tier_escalation(triage, bundle)
+    assert merged["recommendedTier"] == 2
+    assert merged["reason"] == "capa findings"
+
+
+def test_merge_tier_escalation_keeps_triage_when_higher() -> None:
+    triage = {"recommendedTier": 2, "reason": "executable"}
+    bundle = {"suggestedTierEscalation": {"recommendedTier": 0, "reason": "archive hint"}}
+    merged = _merge_tier_escalation(triage, bundle)
+    assert merged["recommendedTier"] == 2
+    assert merged["reason"] == "executable"
 
 
 def test_build_file_triage_payload_embeds_external_scans(

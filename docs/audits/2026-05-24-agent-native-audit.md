@@ -63,6 +63,7 @@ flowchart TD
 | Rename / comments / structures | `manage-function`, `manage-comments`, `manage-structures` | ✅ |
 | Shared VC loop (`/lfg`) | `checkout-program`, `create-label`, `checkin-program`, `sync-project` | ✅ |
 | Export SARIF | `export` | ✅ |
+| Cold binary triage / external scans | `run-file-triage` (optional `externalScanTools`), `run-external-re-scan` | ✅ |
 | GUI cursor / Code Browser launch | — | ❌ intentional (`DISABLED_GUI_ONLY_TOOLS`) |
 | `ghidrecomp` batch pipeline | `run-batch-decompile`, `run-batch-export-gzf`, `run-batch-bsim-signatures`, `run-batch-sast-scan` | ✅ |
 
