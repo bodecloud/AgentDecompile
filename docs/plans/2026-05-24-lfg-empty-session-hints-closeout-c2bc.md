@@ -1,6 +1,6 @@
 ---
 title: LFG — Empty-session hints closeout + compound doc
-status: active
+status: completed
 type: chore
 date: 2026-05-24
 branch: impl/empty-session-hints-c2bc
