@@ -114,15 +114,17 @@ CRUD completeness **12/12 (100%)** when #111 lands. Compound: [agent-native-crud
 
 ### Ship gate (PR #111)
 
-Ship verify plan: [2026-05-24-lfg-crud-mega-stack-ship-verify-c2bc.md](../plans/2026-05-24-lfg-crud-mega-stack-ship-verify-c2bc.md)
+Ship verify plan: [2026-05-24-lfg-crud-mega-stack-ship-verify-c2bc.md](../plans/2026-05-24-lfg-crud-mega-stack-ship-verify-c2bc.md)  
+CI gate plan: [2026-05-24-lfg-crud-mega-stack-ci-gate-c2bc.md](../plans/2026-05-24-lfg-crud-mega-stack-ci-gate-c2bc.md)  
+Merge-ready PR body: [2026-05-29-pr111-crud-mega-stack-merge-ready.md](../pr-bodies/2026-05-29-pr111-crud-mega-stack-merge-ready.md)
 
 - [x] Strings, catalog, function-tags CRUD modes implemented
 - [x] Audit updated to 12/12 on branch
 - [x] `uv run pytest -m unit -q --timeout=120` — 254 passed locally (re-verified 2026-05-29)
 - [x] CRUD trio unit tests — 17 passed locally (re-verified 2026-05-29)
 - [x] `ruff check` on CRUD provider paths — clean (re-verified 2026-05-29)
-- [ ] PR #111 body merge-ready refresh (`gh pr edit` blocked — use `.pr111-body.md` locally)
-- [ ] CI green on #111
+- [ ] PR #111 body merge-ready refresh — paste from [pr111 merge-ready body](../pr-bodies/2026-05-29-pr111-crud-mega-stack-merge-ready.md) (`gh pr edit` blocked)
+- [ ] CI green on #111 — **queued** since 2026-05-29 ([run 26637058127](https://github.com/bolabaden/AgentDecompile/actions/runs/26637058127)); local verify 254 pass
 - [ ] Squash merge #111 to `master`
 - [ ] Post-merge closeout (residual **Merged**, compound doc merge SHA)
 - [ ] Close superseded #105–#110, #108
