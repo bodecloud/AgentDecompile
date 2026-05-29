@@ -340,7 +340,7 @@ class BatchAnalysisToolProvider(ToolProvider):
             function_filter = self._get_str(args, "functionFilter", "function_filter", "filter")
             force_analysis = self._get_bool(args, "forceAnalysis", "force_analysis", "fa", default=False)
             codeql_rules = self._get_str(args, "codeqlRules", "codeql_rules")
-            raw_rules = self._get_list(args, "semgrepRules", "semgrep_rules", "semgrepRules")
+            raw_rules = self._get_list(args, "semgrepRules", "semgrep_rules")
             semgrep_rules = [str(item) for item in raw_rules] if raw_rules else None
 
             payload = build_batch_sast_payload(

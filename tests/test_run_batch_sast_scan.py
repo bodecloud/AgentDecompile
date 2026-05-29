@@ -44,6 +44,7 @@ def test_build_batch_sast_payload_unavailable_skips_runner(
     )
     assert payload["action"] == "run-batch-sast-scan"
     assert payload["sast"]["available"] is False
+    assert payload["sastPath"].endswith("/sast")
     assert payload["sarifFiles"] == []
     assert ran["value"] is False
 

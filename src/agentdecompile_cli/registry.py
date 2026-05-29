@@ -1140,7 +1140,7 @@ _TIER1_TOOLS: frozenset[Tool] = frozenset(
 
 # Tier 3 Ghidra MCP tools: deep analysis, workflow bundles, or program/session mutation.
 # Tier 2 (default for other MCP tools): list/search/xref/read-only discovery.
-# Tier 1 (batch ghidrecomp) remains documented in tiered-re-analysis KB; not an MCP tool yet.
+# Tier 1 batch ghidrecomp tools are MCP-advertised via BatchAnalysisToolProvider.
 _TIER3_GHIDRA_TOOLS: frozenset[Tool] = _STATE_WRITING_TOOLS | frozenset(
     {
         Tool.ANALYZE_DATA_FLOW,

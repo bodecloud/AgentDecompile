@@ -48,6 +48,15 @@ def _normalize_codeql_rules(codeql_rules: str | None) -> str | None:
     return ",".join(parts) if parts else None
 
 
+def _resolve_sast_directory(output_root: Path, binary_path: Path) -> Path:
+    """Predict bin_output/sast path without running decompile (for skip payloads)."""
+    if gen_proj_bin_name_from_path is not None and get_bin_output_path is not None:
+        bin_name = gen_proj_bin_name_from_path(binary_path)
+        bin_output = Path(get_bin_output_path(output_root, bin_name))
+        return bin_output / _SAST_SUBDIR
+    return output_root / "results" / "bins" / binary_path.name / _SAST_SUBDIR
+
+
 def _collect_sarif_files(sast_directory: Path) -> list[str]:
     if not sast_directory.is_dir():
         return []
@@ -120,12 +129,15 @@ def build_batch_sast_payload(
     checker = semgrep_checker or _default_semgrep_checker
     sast_available = bool(checker())
 
+    sast_directory = _resolve_sast_directory(output_root, path)
+
     if not sast_available:
         return {
             "action": "run-batch-sast-scan",
             "binaryPath": str(path),
             "outputPath": str(output_root),
             "projectPath": str(Path(project_path).expanduser().resolve()),
+            "sastPath": str(sast_directory.resolve()),
             "semgrepRules": normalized_semgrep_rules or [],
             "codeqlRules": normalized_codeql_rules,
             "sast": {
@@ -164,7 +176,7 @@ def build_batch_sast_payload(
 
     bin_name = gen_proj_bin_name_from_path(path)
     bin_output = Path(get_bin_output_path(output_root, bin_name))
-    sast_directory = bin_output / _SAST_SUBDIR
+    sast_directory = _resolve_sast_directory(output_root, path)
     sarif_files = _collect_sarif_files(sast_directory)
     summary = _load_summary(sast_directory)
 
