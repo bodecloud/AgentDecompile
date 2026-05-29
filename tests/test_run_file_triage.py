@@ -94,3 +94,51 @@ def test_run_file_triage_advertised_with_max_tier_two(monkeypatch: pytest.Monkey
     monkeypatch.setenv("AGENTDECOMPILE_MAX_ANALYSIS_TIER", "2")
     listed = get_advertised_tools_for_list()
     assert Tool.RUN_FILE_TRIAGE.value in listed
+
+
+def test_build_file_triage_payload_embeds_external_scans(
+    sample_binary: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("agentdecompile_cli.mcp_utils.external_re_scan.shutil.which", lambda name: f"/usr/bin/{name}")
+
+    def fake_runner(command: list[str], *, timeout_ms: int) -> dict:
+        return {
+            "command": command,
+            "exitCode": 0,
+            "stdout": "scan output",
+            "stderr": "",
+            "available": True,
+        }
+
+    payload = build_file_triage_payload(
+        sample_binary,
+        try_yara=False,
+        try_capa=False,
+        try_binwalk=False,
+        external_scan_tools=["capa", "binwalk"],
+        external_scan_runner=fake_runner,
+    )
+    assert "externalScans" in payload
+    assert payload["externalScans"]["tools"] == ["capa", "binwalk"]
+    assert "capa" in payload["externalScans"]["scans"]
+    assert payload["externalScans"]["counts"]["toolsRequested"] == 2
+
+
+@pytest.mark.asyncio
+async def test_provider_run_file_triage_with_external_scans(
+    sample_binary: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("agentdecompile_cli.mcp_utils.external_re_scan.shutil.which", lambda _name: "/usr/bin/capa")
+    provider = StaticAnalysisToolProvider()
+    raw_args = {
+        "binaryPath": str(sample_binary),
+        "tryYara": False,
+        "tryCapa": False,
+        "tryBinwalk": False,
+        "externalScanTools": ["capa"],
+    }
+    result = await provider._handle_run_file_triage({n(k): v for k, v in raw_args.items()})
+    payload = json.loads(result[0].text)
+    assert payload["externalScans"]["tools"] == ["capa"]
