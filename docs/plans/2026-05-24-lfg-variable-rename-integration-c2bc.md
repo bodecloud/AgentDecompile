@@ -1,6 +1,6 @@
 ---
 title: LFG — Ghidra integration test for variable rename persistence
-status: active
+status: completed
 type: feat
 date: 2026-05-24
 branch: impl/variable-rename-integration-c2bc
