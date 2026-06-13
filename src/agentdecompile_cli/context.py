@@ -118,6 +118,11 @@ class ProgramInfo:
         logger.debug("diag.enter %s", "context.py:ProgramInfo.analysis_complete")
         return self.ghidra_analysis_complete
 
+    @analysis_complete.setter
+    def analysis_complete(self, value: bool) -> None:
+        """Set analysis completion status (delegates to ghidra_analysis_complete)."""
+        self.ghidra_analysis_complete = value
+
     @property
     def current_program(self) -> GhidraProgram | None:
         """Get the current program."""
