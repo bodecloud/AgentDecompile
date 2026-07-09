@@ -1764,6 +1764,7 @@ class ToolProviderManager:
         from agentdecompile_cli.mcp_server.providers import (
             BookmarkToolProvider,
             BatchAnalysisToolProvider,
+            DecompMatchToolProvider,
             CallGraphToolProvider,
             CommentToolProvider,
             ConflictResolutionToolProvider,
@@ -1795,6 +1796,7 @@ class ToolProviderManager:
         for cls in (
             BookmarkToolProvider,
             BatchAnalysisToolProvider,
+            DecompMatchToolProvider,
             CallGraphToolProvider,
             CommentToolProvider,
             ConflictResolutionToolProvider,
