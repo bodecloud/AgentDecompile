@@ -30,6 +30,9 @@ from agentdecompile_recovery.frontdoor import build_parser as build_frontdoor_pa
 from agentdecompile_recovery.tools import STEAMLESS_API_NAME, ToolchainError, ensure_steamless_layout
 
 
+pytestmark = pytest.mark.unit
+
+
 def test_bundle_conflicts_and_claim_boundary(tmp_path: Path) -> None:
     out = tmp_path / "bundle"
     target = {"stableId": "fixture", "sha256": "a" * 64, "architectureHint": "x86", "imageBase": 0x400000}
@@ -115,6 +118,133 @@ def test_sniff_notes_and_source(tmp_path: Path) -> None:
     src.write_text("int foo(void) { return 0; }\n", encoding="utf-8")
     assert sniff_path(notes).adapter == "context-pack"
     assert sniff_path(src).adapter == "context-pack"
+
+
+def test_mid_run_acquire_merges_same_fingerprint_and_preserves_verified(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(REGISTRY_ENV, str(tmp_path / "registry"))
+    binary = tmp_path / "app.bin"
+    binary.write_bytes(b"MZfake" + os.urandom(64))
+    run = tmp_path / "run"
+    acq = run / "acquisition"
+    verified = run / "verified"
+    verified.mkdir(parents=True)
+    keep = verified / "keep_00401000.c"
+    keep.write_text("int keep(void){return 0;}\n", encoding="utf-8")
+    (verified / "keep_00401000.objdiff-verified.json").write_text(
+        json.dumps({"proofTier": "target-object-objdiff-match", "status": "matched", "differences": 0, "count": 1}),
+        encoding="utf-8",
+    )
+
+    notes_a = tmp_path / "notes_a.md"
+    notes_a.write_text(
+        "# A\nFUN_00401000 at 0x401000 returns zero.\n",
+        encoding="utf-8",
+    )
+    facts_a = tmp_path / "facts_a.jsonl"
+    facts_a.write_text(
+        json.dumps(
+            {
+                "kind": "function",
+                "name": "FUN_00401000",
+                "address": "0x401000",
+                "summary": "returns zero",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    first = acquire_context(
+        target_input=binary,
+        context_paths=[notes_a, facts_a],
+        out_dir=acq,
+        repo_root=tmp_path,
+        register=True,
+    )
+    assert first["registered"] is True
+    first_bundle = Path(str(first["bundleDir"]))
+    first_fp = first["targetFingerprint"]
+    assert first.get("snapshotDir")
+    assert first_bundle.exists()
+
+    notes_b = tmp_path / "notes_b.md"
+    notes_b.write_text(
+        "# B\nFUN_00402000 at 0x402000 allocates a buffer.\n",
+        encoding="utf-8",
+    )
+    facts_b = tmp_path / "facts_b.jsonl"
+    facts_b.write_text(
+        json.dumps(
+            {
+                "kind": "function",
+                "name": "FUN_00402000",
+                "address": "0x402000",
+                "summary": "allocates buffer",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    # Mid-run: only new context paths — prior evidence must still be present.
+    second = acquire_context(
+        target_input=binary,
+        context_paths=[notes_b, facts_b],
+        out_dir=acq,
+        repo_root=tmp_path,
+        register=True,
+    )
+    assert second["registered"] is True
+    assert second["targetFingerprint"] == first_fp
+    assert second.get("priorBundleDir")
+    assert int(second.get("mergedPriorSourceCount") or 0) >= 1
+    second_bundle = Path(str(second["bundleDir"]))
+    assert second_bundle.resolve() != first_bundle.resolve()
+    assert first_bundle.exists()  # immutable prior snapshot
+
+    queried_old = query_bundle(second_bundle, action="get-function", query="FUN_00401000")
+    queried_new = query_bundle(second_bundle, action="get-function", query="FUN_00402000")
+    assert queried_old["resultCount"] >= 1
+    assert queried_new["resultCount"] >= 1
+    assert keep.exists()
+    assert keep.read_text(encoding="utf-8").startswith("int keep")
+
+
+def test_mid_run_acquire_records_conflicts_across_snapshots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(REGISTRY_ENV, str(tmp_path / "registry"))
+    binary = tmp_path / "app.bin"
+    binary.write_bytes(b"MZfake" + os.urandom(32))
+    facts_a = tmp_path / "a.jsonl"
+    facts_a.write_text(
+        json.dumps({"kind": "function", "name": "alpha", "address": "0x401000", "summary": "a"}) + "\n",
+        encoding="utf-8",
+    )
+    first = acquire_context(
+        target_input=binary,
+        context_paths=[facts_a],
+        out_dir=tmp_path / "acq",
+        repo_root=tmp_path,
+        register=True,
+    )
+    facts_b = tmp_path / "b.jsonl"
+    facts_b.write_text(
+        json.dumps({"kind": "function", "name": "beta", "address": "0x401000", "summary": "b"}) + "\n",
+        encoding="utf-8",
+    )
+    second = acquire_context(
+        target_input=binary,
+        context_paths=[facts_b],
+        out_dir=tmp_path / "acq",
+        repo_root=tmp_path,
+        register=True,
+    )
+    _, entities, conflicts = load_bundle(Path(str(second["bundleDir"])))
+    assert first["targetFingerprint"] == second["targetFingerprint"]
+    assert any(c.get("address") == 0x401000 and c.get("resolution") == "unresolved" for c in conflicts)
+    names = {str(e.get("name")) for e in entities if e.get("address") == 0x401000}
+    assert "alpha" in names and "beta" in names
 
 
 def test_frontdoor_exposes_context_flags() -> None:
