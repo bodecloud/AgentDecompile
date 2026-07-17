@@ -4,9 +4,39 @@ from __future__ import annotations
 
 from typing import Any
 
+from .autonomy_budget import AutonomyBudget, remaining_attempts
 
-def choose_next_action(context: dict[str, Any], previous_attempts: list[dict[str, Any]]) -> dict[str, Any]:
+
+def choose_next_action(
+    context: dict[str, Any],
+    previous_attempts: list[dict[str, Any]],
+    *,
+    budget: AutonomyBudget | dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Classify the next autonomous action from the latest attempt evidence."""
+
+    resolved = _coerce_budget(budget)
+    attempts_seen = len(previous_attempts)
+    remaining = remaining_attempts(attempts_seen=attempts_seen, budget=resolved) if resolved else None
+
+    # Budget exhaustion is a typed stop before spending another repair cycle.
+    if resolved is not None and remaining == 0 and attempts_seen > 0:
+        latest = previous_attempts[-1]
+        verifier = latest.get("source-candidate-objdiff")
+        best_diff = optional_int((verifier.data if verifier else {}).get("differenceCount"))
+        return {
+            "schema": "agentdecompile.autonomous-policy-decision.v1",
+            "action": "stop-budget-exhausted",
+            "reason": (
+                f"autonomy budget exhausted after {attempts_seen} attempt(s) "
+                f"(maxAttemptsPerFunction={resolved.max_attempts_per_function})"
+            ),
+            "attemptsSeen": attempts_seen,
+            "attemptsRemaining": 0,
+            "bestDifferenceCount": best_diff,
+            "boundaryQuality": None,
+            "claimBoundary": "policy selects the next recovery action; it does not promote source without the verifier gate",
+        }
 
     latest = previous_attempts[-1] if previous_attempts else {}
     generator = latest.get("source-candidate-generator")
@@ -39,15 +69,38 @@ def choose_next_action(context: dict[str, Any], previous_attempts: list[dict[str
         action = "try-next-generated-candidate"
         reason = "previous candidate did not match"
 
-    return {
+    decision = {
         "schema": "agentdecompile.autonomous-policy-decision.v1",
         "action": action,
         "reason": reason,
-        "attemptsSeen": len(previous_attempts),
+        "attemptsSeen": attempts_seen,
         "bestDifferenceCount": best_diff,
         "boundaryQuality": boundary_quality.get("status"),
         "claimBoundary": "policy selects the next recovery action; it does not promote source without the verifier gate",
     }
+    if remaining is not None:
+        decision["attemptsRemaining"] = remaining
+    return decision
+
+
+def _coerce_budget(budget: AutonomyBudget | dict[str, Any] | None) -> AutonomyBudget | None:
+    if budget is None:
+        return None
+    if isinstance(budget, AutonomyBudget):
+        return budget
+    return AutonomyBudget(
+        max_functions=int(budget.get("max_functions") or budget.get("maxFunctions") or 1),
+        max_attempts_per_function=int(
+            budget.get("max_attempts_per_function")
+            or budget.get("maxAttemptsPerFunction")
+            or 3
+        ),
+        max_wall_seconds=(
+            int(budget["max_wall_seconds"])
+            if budget.get("max_wall_seconds") is not None
+            else (int(budget["maxWallSeconds"]) if budget.get("maxWallSeconds") is not None else None)
+        ),
+    )
 
 
 def optional_int(value: Any) -> int | None:

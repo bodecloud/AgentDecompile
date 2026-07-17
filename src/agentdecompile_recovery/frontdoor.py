@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from .acquire import acquire_context
+from .autonomy_budget import budget_from_args, write_autonomy_budget_receipt
 from .claim_report import write_claim_report
 from .cli import main as legacy_main
 from .pipeline import RecoveryConfig, RecoveryRunner
@@ -107,6 +108,24 @@ def build_parser() -> argparse.ArgumentParser:
         "--autonomous",
         action="store_true",
         help="Enable bounded vacuum/repair autonomy after the core recovery stages (advanced).",
+    )
+    parser.add_argument(
+        "--autonomous-max-functions",
+        type=int,
+        default=1,
+        help="Autonomy budget: maximum functions for vacuum start (default: 1). Use 0 to skip vacuum.",
+    )
+    parser.add_argument(
+        "--autonomous-max-attempts",
+        type=int,
+        default=3,
+        help="Autonomy budget: maximum repair attempts per function (default: 3).",
+    )
+    parser.add_argument(
+        "--autonomous-max-wall-seconds",
+        type=int,
+        default=None,
+        help="Autonomy budget: optional wall-clock cap forwarded to vacuum when supported.",
     )
     parser.add_argument(
         "--resume",
@@ -317,6 +336,11 @@ def run_one_shot(args: argparse.Namespace) -> int:
                 # Best-effort partial detection; keep matched/failed if summary is unreadable.
                 pass
         claim_path = write_claim_report(work_dir, terminal_status=terminal)
+        budget = budget_from_args(
+            max_functions=getattr(args, "autonomous_max_functions", None),
+            max_attempts_per_function=getattr(args, "autonomous_max_attempts", None),
+            max_wall_seconds=getattr(args, "autonomous_max_wall_seconds", None),
+        )
         if not args.json:
             print(
                 json.dumps(
@@ -327,13 +351,39 @@ def run_one_shot(args: argparse.Namespace) -> int:
                         "claimReport": str(claim_path),
                         "claimBoundary": "report status is orchestration outcome; semantic recovery requires objdiff-verified-semantic artifacts under verified/",
                         "autonomousRequested": bool(args.autonomous),
+                        "autonomyBudget": budget.to_json(),
                     },
                     indent=2,
                 )
             )
     if rc == 0 and args.autonomous:
+        budget = budget_from_args(
+            max_functions=getattr(args, "autonomous_max_functions", None),
+            max_attempts_per_function=getattr(args, "autonomous_max_attempts", None),
+            max_wall_seconds=getattr(args, "autonomous_max_wall_seconds", None),
+        )
+        queue = work_dir / "state" / "queue.json"
+        bridge_args = budget.vacuum_bridge_args(queue=queue)
+        if bridge_args is None:
+            write_autonomy_budget_receipt(
+                work_dir,
+                budget,
+                requested=True,
+                status="skipped:budget-exhausted",
+                reason="autonomous-max-functions is 0; vacuum not started",
+            )
+            return rc
         # Advanced hook: bridge to vacuum without making it a peer CLI brand.
-        bridge_rc = run_decomp_cli_bridge(["vacuum", "start", "--queue", str(work_dir / "state" / "queue.json"), "--max-functions", "1"])
+        bridge_rc = run_decomp_cli_bridge(bridge_args)
+        write_autonomy_budget_receipt(
+            work_dir,
+            budget,
+            requested=True,
+            status="bridged" if bridge_rc == 0 else "bridge-failed",
+            reason="vacuum start via decomp-cli bridge",
+            bridge_args=bridge_args,
+            bridge_returncode=bridge_rc,
+        )
         if bridge_rc != 0:
             return bridge_rc
     return rc
@@ -349,6 +399,9 @@ def build_reconstruct_namespace(
     acquisition_bundle: Path | None = None,
     stop_after: str | None = None,
     autonomous: bool = False,
+    autonomous_max_functions: int = 1,
+    autonomous_max_attempts: int = 3,
+    autonomous_max_wall_seconds: int | None = None,
     force: bool = False,
     resume: bool = True,
 ) -> argparse.Namespace:
@@ -369,6 +422,10 @@ def build_reconstruct_namespace(
         argv.extend(["--stop-after", stop_after])
     if autonomous:
         argv.append("--autonomous")
+    argv.extend(["--autonomous-max-functions", str(autonomous_max_functions)])
+    argv.extend(["--autonomous-max-attempts", str(autonomous_max_attempts)])
+    if autonomous_max_wall_seconds is not None:
+        argv.extend(["--autonomous-max-wall-seconds", str(autonomous_max_wall_seconds)])
     if force:
         argv.append("--force")
     if not resume:
@@ -386,6 +443,9 @@ def run_reconstruct_job(
     acquisition_bundle: Path | None = None,
     stop_after: str | None = None,
     autonomous: bool = False,
+    autonomous_max_functions: int = 1,
+    autonomous_max_attempts: int = 3,
+    autonomous_max_wall_seconds: int | None = None,
     force: bool = False,
     resume: bool = True,
 ) -> dict[str, Any]:
@@ -403,6 +463,9 @@ def run_reconstruct_job(
         acquisition_bundle=acquisition_bundle,
         stop_after=stop_after,
         autonomous=autonomous,
+        autonomous_max_functions=autonomous_max_functions,
+        autonomous_max_attempts=autonomous_max_attempts,
+        autonomous_max_wall_seconds=autonomous_max_wall_seconds,
         force=force,
         resume=resume,
     )
@@ -418,6 +481,11 @@ def run_reconstruct_job(
             pass
     status = build_recovery_status(resolved_work)
     terminal = str(claim.get("terminalStatus") or status.get("terminalStatus") or ("matched" if exit_code == 0 else "failed"))
+    budget = budget_from_args(
+        max_functions=autonomous_max_functions,
+        max_attempts_per_function=autonomous_max_attempts,
+        max_wall_seconds=autonomous_max_wall_seconds,
+    )
     return {
         "tool": "reconstruct",
         "exitCode": exit_code,
@@ -430,6 +498,7 @@ def run_reconstruct_job(
             "objdiff-verified-semantic artifacts under verified/"
         ),
         "autonomousRequested": bool(autonomous),
+        "autonomyBudget": budget.to_json(),
     }
 
 
