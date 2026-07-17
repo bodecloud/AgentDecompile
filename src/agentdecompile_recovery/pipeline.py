@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import signal
 import shutil
@@ -39,6 +40,17 @@ from .tools import (
 
 
 ROOT = Path(__file__).resolve().parents[2]
+
+# Stages that consume acquisition / context-pack facts. Early inventory stages must
+# remain resumable when mid-run ``--context`` only changes acquisition identity.
+ACQUISITION_SENSITIVE_STAGES = frozenset(
+    {
+        "generate-source-candidates",
+        "synthesize-source-tasks",
+        "plan-strategy",
+        "report",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -200,17 +212,13 @@ class RecoveryRunner:
         return all(path.exists() for path in stage.outputs)
 
     def stage_config(self, stage: Stage) -> dict[str, Any]:
-        return {
+        config: dict[str, Any] = {
             "input": str(self.config.input_path),
             "preferredName": self.config.preferred_name,
             "enableByteAuthority": self.config.enable_byte_authority,
             "enableLegacyAdapters": self.config.enable_legacy_adapters,
             "snapshotExistingLabel": self.config.snapshot_existing_label,
             "functionAnalysis": self.config.function_analysis,
-            "functionFactsJsonl": str(self.config.function_facts_jsonl) if self.config.function_facts_jsonl else None,
-            "contextPaths": [str(path) for path in self.config.context_paths],
-            "contextPack": str(self.config.context_pack) if self.config.context_pack else None,
-            "acquisitionBundle": str(self.config.acquisition_bundle) if self.config.acquisition_bundle else None,
             "sourceTaskLimit": self.config.source_task_limit,
             "sourceTaskOffset": self.config.source_task_offset,
             "sourceSynthesisEngine": self.config.source_synthesis_engine,
@@ -238,6 +246,76 @@ class RecoveryRunner:
             "stageTimeout": self.config.stage_timeout,
             "stage": stage.name,
         }
+        if stage.name in ACQUISITION_SENSITIVE_STAGES:
+            # Stable bundle identity — not ephemeral --context path lists — so mid-run
+            # re-acquire invalidates only stages that consume acquisition facts.
+            config["acquisitionIdentity"] = self.acquisition_identity()
+        return config
+
+    def acquisition_identity(self) -> dict[str, Any]:
+        """Content-stable acquisition identity for resume fingerprints.
+
+        Prefer an explicit / registered acquisition bundle over CLI path lists so
+        mid-run ``--context`` does not force every stage to re-run.
+        """
+        bundle_dir = self._resolve_acquisition_bundle_for_identity()
+        if bundle_dir is not None:
+            identity: dict[str, Any] = {
+                "kind": "bundle",
+                "bundleDir": str(bundle_dir.resolve()),
+            }
+            manifest_path = bundle_dir / "manifest.json"
+            if manifest_path.exists():
+                try:
+                    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError, TypeError, ValueError):
+                    manifest = {}
+                for key in ("targetFingerprint", "entityCount", "sourceCount", "conflictCount", "createdAt"):
+                    if key in manifest:
+                        identity[key] = manifest[key]
+                facts_name = str(manifest.get("factsJsonl") or "function-facts.jsonl")
+                facts_path = bundle_dir / facts_name
+                if facts_path.is_file():
+                    identity["factsSha256"] = hashlib.sha256(facts_path.read_bytes()).hexdigest()
+            return identity
+        if self.config.function_facts_jsonl is not None:
+            facts = self.config.function_facts_jsonl
+            identity = {"kind": "functionFacts", "path": str(facts)}
+            if facts.is_file():
+                identity["sha256"] = hashlib.sha256(facts.read_bytes()).hexdigest()
+            return identity
+        if self.config.context_pack is not None:
+            return {"kind": "contextPack", "path": str(self.config.context_pack.resolve())}
+        if self.config.context_paths:
+            return {
+                "kind": "contextPaths",
+                "paths": sorted(str(path.resolve()) for path in self.config.context_paths),
+            }
+        return {"kind": "none"}
+
+    def _resolve_acquisition_bundle_for_identity(self) -> Path | None:
+        """Locate the acquisition bundle without mutating the run directory."""
+        if self.config.acquisition_bundle is not None:
+            candidate = self.config.acquisition_bundle
+            if (candidate / "manifest.json").exists():
+                return candidate
+        if self.config.context_pack is not None:
+            candidate = self.config.context_pack
+            if (candidate / "manifest.json").exists() and (candidate / "entities.jsonl").exists():
+                return candidate
+            nested = candidate / "acquisition-bundle"
+            if (nested / "manifest.json").exists():
+                return nested
+        latest = self.run_dir / "acquisition" / "latest.json"
+        if latest.exists():
+            try:
+                pointer = json.loads(latest.read_text(encoding="utf-8"))
+                candidate = Path(str(pointer.get("bundleDir") or ""))
+                if candidate.is_dir() and (candidate / "manifest.json").exists():
+                    return candidate
+            except (OSError, json.JSONDecodeError, TypeError, ValueError):
+                pass
+        return None
 
     def stage_fingerprint(self, stage: Stage) -> str:
         return config_fingerprint(self.stage_config(stage))
@@ -493,12 +571,14 @@ class RecoveryRunner:
         return summary
 
     def resolve_acquisition_facts_source(self, target: dict[str, Any]) -> Path | None:
+        # Prefer an explicit acquisition bundle (e.g. frontdoor mid-run snapshot with
+        # prior merge) over rebuilding a path-only pack that would drop fused facts.
         bundle_dir: Path | None = self.config.acquisition_bundle
         compatibility_projection: Path | None = None
         legacy_sources: list[Path] = []
         if self.config.function_facts_jsonl:
             legacy_sources.append(self.config.function_facts_jsonl)
-        if self.config.context_pack:
+        if bundle_dir is None and self.config.context_pack:
             candidate = self.config.context_pack
             if (candidate / "manifest.json").exists() and (candidate / "entities.jsonl").exists():
                 bundle_dir = candidate
@@ -508,7 +588,7 @@ class RecoveryRunner:
                 packed = candidate / "function-facts.jsonl"
                 if packed.exists():
                     legacy_sources.append(packed)
-        if self.config.context_paths:
+        if bundle_dir is None and self.config.context_paths:
             build_context_pack(
                 contexts=list(self.config.context_paths),
                 out_dir=self.run_dir / "context-pack",
