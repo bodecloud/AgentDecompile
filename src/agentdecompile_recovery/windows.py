@@ -1046,6 +1046,18 @@ def promote_source_parity_accepts(source_package: dict[str, Any], source_parity:
         functions.append(function)
         promoted.append(function)
         existing_keys.add(key)
+        # Dual-write claim-visible verified/ tree (package functions/ stays the rebuild surface).
+        from .artifact_layout import publish_verified_artifact
+
+        publish_verified_artifact(
+            package_dir.parent,
+            stem=stem,
+            source=copied_c,
+            metadata={
+                **metadata,
+                "differences": row.get("differences"),
+            },
+        )
 
     manifest["functions"] = functions
     manifest["functionCount"] = len(functions)
