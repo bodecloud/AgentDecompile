@@ -295,6 +295,7 @@ def run_one_shot(args: argparse.Namespace) -> int:
             if str(analysis.get("terminalStatus") or "").startswith("blocked:toolchain"):
                 terminal = "blocked:toolchain"
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            # Best-effort status enrichment; keep orchestration outcome if parse fails.
             pass
     state_path = work_dir / "state.json"
     if terminal != "blocked:toolchain" and state_path.exists():
@@ -303,6 +304,7 @@ def run_one_shot(args: argparse.Namespace) -> int:
             if state.get("terminalStatus") == "blocked:toolchain" or state.get("status") == "blocked:toolchain":
                 terminal = "blocked:toolchain"
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            # Best-effort status enrichment; keep orchestration outcome if parse fails.
             pass
     if report_path.exists() or terminal == "blocked:toolchain":
         if rc == 0 and (work_dir / "source-synthesis" / "summary.json").exists():
@@ -312,6 +314,7 @@ def run_one_shot(args: argparse.Namespace) -> int:
                 if accepted == 0 and terminal == "matched":
                     terminal = "partial"
             except (OSError, json.JSONDecodeError, TypeError, ValueError):
+                # Best-effort partial detection; keep matched/failed if summary is unreadable.
                 pass
         claim_path = write_claim_report(work_dir, terminal_status=terminal)
         if not args.json:
