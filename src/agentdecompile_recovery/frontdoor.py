@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from .acquire import acquire_context
-from .autonomy_budget import budget_from_args, write_autonomy_budget_receipt
+from .autonomy_budget import budget_from_args, ensure_vacuum_queue, write_autonomy_budget_receipt
 from .claim_report import write_claim_report
 from .cli import main as legacy_main
 from .pipeline import RecoveryConfig, RecoveryRunner
@@ -362,7 +362,7 @@ def run_one_shot(args: argparse.Namespace) -> int:
             max_attempts_per_function=getattr(args, "autonomous_max_attempts", None),
             max_wall_seconds=getattr(args, "autonomous_max_wall_seconds", None),
         )
-        queue = work_dir / "state" / "queue.json"
+        queue = ensure_vacuum_queue(work_dir / "state" / "queue.json")
         bridge_args = budget.vacuum_bridge_args(queue=queue)
         if bridge_args is None:
             write_autonomy_budget_receipt(

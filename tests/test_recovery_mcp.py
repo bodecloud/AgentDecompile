@@ -50,6 +50,48 @@ def test_build_recovery_status_from_work_dir(tmp_path: Path) -> None:
     assert "objdiff-verified-semantic" in status["claimBoundary"] or "objdiff" in status["claimBoundary"]
 
 
+def test_build_recovery_status_includes_autonomy_and_vacuum(tmp_path: Path) -> None:
+    work = tmp_path / "run"
+    (work / "state").mkdir(parents=True)
+    (work / "autonomy-budget.json").write_text(
+        json.dumps(
+            {
+                "schema": "agentdecompile.autonomy-budget.v1",
+                "requested": True,
+                "status": "bridged",
+                "max_functions": 1,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (work / "state" / "queue.json").write_text(
+        json.dumps(
+            {
+                "schema": "agentdecompile.vacuum-queue.v1",
+                "pending": ["a"],
+                "matched": ["b"],
+                "integrated": [],
+                "failed": [],
+                "difficult": [],
+                "attempts": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (work / "state" / "vacuum-session.json").write_text(
+        json.dumps({"schema": "agentdecompile.vacuum-session.v1", "status": "finished"}),
+        encoding="utf-8",
+    )
+
+    status = build_recovery_status(work)
+    assert status["autonomyBudget"]["status"] == "bridged"
+    assert status["vacuum"]["queueCounts"]["pending"] == 1
+    assert status["vacuum"]["queueCounts"]["matched"] == 1
+    assert status["vacuum"]["sessionStatus"] == "finished"
+    assert status["paths"]["autonomyBudget"]
+    assert status["paths"]["vacuumQueue"]
+
+
 @pytest.mark.asyncio
 async def test_provider_status_and_claim_report(tmp_path: Path) -> None:
     work = tmp_path / "run"

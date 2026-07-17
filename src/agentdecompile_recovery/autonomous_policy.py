@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .artifact_layout import is_objdiff_zero_accept
 from .autonomy_budget import AutonomyBudget, remaining_attempts
 
 
@@ -23,14 +24,25 @@ def choose_next_action(
     if resolved is not None and remaining == 0 and attempts_seen > 0:
         latest = previous_attempts[-1]
         verifier = latest.get("source-candidate-objdiff")
-        best_diff = optional_int((verifier.data if verifier else {}).get("differenceCount"))
+        verifier_data = (verifier.data if verifier else {}) or {}
+        best_diff = optional_int(verifier_data.get("differenceCount"))
+        if best_diff is None:
+            best_diff = optional_int(verifier_data.get("differences"))
+        action = "stop-budget-exhausted"
+        reason = (
+            f"autonomy budget exhausted after {attempts_seen} attempt(s) "
+            f"(maxAttemptsPerFunction={resolved.max_attempts_per_function})"
+        )
+        if best_diff is not None and best_diff > 0:
+            action = "reject-near-miss"
+            reason = (
+                f"near-miss rejected after budget exhaustion "
+                f"(bestDifferenceCount={best_diff}; not objdiff-zero)"
+            )
         return {
             "schema": "agentdecompile.autonomous-policy-decision.v1",
-            "action": "stop-budget-exhausted",
-            "reason": (
-                f"autonomy budget exhausted after {attempts_seen} attempt(s) "
-                f"(maxAttemptsPerFunction={resolved.max_attempts_per_function})"
-            ),
+            "action": action,
+            "reason": reason,
             "attemptsSeen": attempts_seen,
             "attemptsRemaining": 0,
             "bestDifferenceCount": best_diff,
@@ -43,7 +55,10 @@ def choose_next_action(
     verifier = latest.get("source-candidate-objdiff")
     row = context.get("sourceParityRow") if isinstance(context.get("sourceParityRow"), dict) else {}
     boundary_quality = ((row.get("targetSlice") or {}).get("boundaryQuality") or {}) if isinstance(row, dict) else {}
-    best_diff = optional_int((verifier.data if verifier else {}).get("differenceCount"))
+    verifier_data = (verifier.data if verifier else {}) or {}
+    best_diff = optional_int(verifier_data.get("differenceCount"))
+    if best_diff is None:
+        best_diff = optional_int(verifier_data.get("differences"))
     verifier_error = (verifier.error if verifier else "") or ""
     generator_error = (generator.error if generator else "") or ""
 
@@ -56,12 +71,12 @@ def choose_next_action(
     elif "compile" in verifier_error.lower() or "syntax" in verifier_error.lower():
         action = "regenerate-source-shape"
         reason = "compiler rejected the selected source candidate"
-    elif best_diff == 0:
+    elif _is_objdiff_zero_verifier(verifier_data, best_diff):
         action = "promote-or-export"
-        reason = "verifier reported zero differences"
+        reason = "verifier reported objdiff-zero accept"
     elif best_diff is not None and best_diff <= 8:
         action = "try-nearby-source-shape-or-permuter"
-        reason = f"candidate is close to match with {best_diff} difference(s)"
+        reason = f"candidate is close to match with {best_diff} difference(s); near-miss is not promote"
     elif context.get("compilerProfiles") in (None, [], ()):
         action = "block-on-compiler-profile-evidence"
         reason = "large mismatch without compiler-profile evidence"
@@ -81,6 +96,21 @@ def choose_next_action(
     if remaining is not None:
         decision["attemptsRemaining"] = remaining
     return decision
+
+
+def _is_objdiff_zero_verifier(verifier_data: dict[str, Any], best_diff: int | None) -> bool:
+    if best_diff != 0:
+        return False
+    row = {
+        "status": verifier_data.get("status") or "matched",
+        "differences": 0,
+        "proofTier": verifier_data.get("proofTier") or verifier_data.get("verificationTier"),
+    }
+    # differenceCount==0 with matched/default status is enough for policy promote;
+    # stronger proof tiers still pass through is_objdiff_zero_accept.
+    if is_objdiff_zero_accept(row):
+        return True
+    return str(row.get("status") or "") in {"matched", "source-parity-accepted", "code-slice-matched", ""}
 
 
 def _coerce_budget(budget: AutonomyBudget | dict[str, Any] | None) -> AutonomyBudget | None:

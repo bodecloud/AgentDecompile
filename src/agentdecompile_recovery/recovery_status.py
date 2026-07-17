@@ -17,6 +17,16 @@ def _load_json(path: Path) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
+def _queue_counts(queue: dict[str, Any] | None) -> dict[str, int] | None:
+    if queue is None:
+        return None
+    counts: dict[str, int] = {}
+    for key in ("pending", "matched", "integrated", "failed", "difficult"):
+        value = queue.get(key)
+        counts[key] = len(value) if isinstance(value, list) else 0
+    return counts
+
+
 def build_recovery_status(work_dir: Path) -> dict[str, Any]:
     """Summarize reconstruct/recover work-dir progress without claiming semantic parity."""
 
@@ -26,6 +36,9 @@ def build_recovery_status(work_dir: Path) -> dict[str, Any]:
     analysis = _load_json(work_dir / "analysis-target.json")
     claim = _load_json(work_dir / "claim-report.json")
     synth = _load_json(work_dir / "source-synthesis" / "summary.json")
+    budget = _load_json(work_dir / "autonomy-budget.json")
+    queue = _load_json(work_dir / "state" / "queue.json")
+    session = _load_json(work_dir / "state" / "vacuum-session.json")
 
     terminal = None
     for source in (claim, analysis, state, report):
@@ -49,6 +62,20 @@ def build_recovery_status(work_dir: Path) -> dict[str, Any]:
     advisory = work_dir / "advisory"
     verified_count = sum(1 for path in verified.rglob("*") if path.is_file()) if verified.is_dir() else 0
     advisory_count = sum(1 for path in advisory.rglob("*") if path.is_file()) if advisory.is_dir() else 0
+    queue_counts = _queue_counts(queue)
+
+    vacuum: dict[str, Any] | None = None
+    if budget is not None or queue is not None or session is not None:
+        vacuum = {
+            "budgetStatus": (budget or {}).get("status"),
+            "requested": bool((budget or {}).get("requested")) if budget is not None else False,
+            "queueCounts": queue_counts,
+            "sessionStatus": (session or {}).get("status") if session is not None else None,
+            "claimBoundary": (
+                "vacuum/budget fields summarize autonomy loop progress only; "
+                "they are not objdiff-verified-semantic proof"
+            ),
+        }
 
     return {
         "schema": "agentdecompile.recovery-status.v1",
@@ -63,6 +90,8 @@ def build_recovery_status(work_dir: Path) -> dict[str, Any]:
             "acceptedCandidates": int((synth or {}).get("acceptedCandidates") or (synth or {}).get("accepted") or 0),
             "objdiffVerified": int((claim or {}).get("counts", {}).get("objdiffVerified") or 0),
         },
+        "autonomyBudget": budget,
+        "vacuum": vacuum,
         "claimBoundary": (
             "status summarizes orchestration progress only; "
             "objdiff-verified-semantic proof remains required for accepted source"
@@ -70,6 +99,8 @@ def build_recovery_status(work_dir: Path) -> dict[str, Any]:
         "paths": {
             "report": str(work_dir / "report.json") if report is not None else None,
             "claimReport": str(work_dir / "claim-report.json") if claim is not None else None,
+            "autonomyBudget": str(work_dir / "autonomy-budget.json") if budget is not None else None,
+            "vacuumQueue": str(work_dir / "state" / "queue.json") if queue is not None else None,
             "verified": str(verified) if verified.is_dir() else None,
             "advisory": str(advisory) if advisory.is_dir() else None,
         },

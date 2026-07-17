@@ -59,10 +59,33 @@ class AutonomyBudget:
             str(queue),
             "--max-functions",
             str(self.max_functions),
+            "--max-attempts",
+            str(self.max_attempts_per_function),
         ]
         if self.max_wall_seconds is not None:
-            args.extend(["--max-wall-seconds", str(self.max_wall_seconds)])
+            # vacuum.sh accepts --timeout with a duration suffix (e.g. 120s).
+            args.extend(["--timeout", f"{int(self.max_wall_seconds)}s"])
         return args
+
+
+def ensure_vacuum_queue(queue: Path) -> Path:
+    """Create an empty vacuum queue under the reconstruct work dir if missing."""
+
+    queue.parent.mkdir(parents=True, exist_ok=True)
+    if not queue.exists():
+        atomic_write_json(
+            queue,
+            {
+                "schema": "agentdecompile.vacuum-queue.v1",
+                "pending": [],
+                "matched": [],
+                "integrated": [],
+                "failed": [],
+                "difficult": [],
+                "attempts": {},
+            },
+        )
+    return queue
 
 
 def budget_from_args(
