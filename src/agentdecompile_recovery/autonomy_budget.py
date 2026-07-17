@@ -6,6 +6,8 @@ receipts, not claims: exhausting a budget is a typed stop, not a match.
 
 from __future__ import annotations
 
+import shlex
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -47,7 +49,14 @@ class AutonomyBudget:
         )
         return payload
 
-    def vacuum_bridge_args(self, *, queue: Path, prompts_dir: Path | None = None) -> list[str] | None:
+    def vacuum_bridge_args(
+        self,
+        *,
+        queue: Path,
+        prompts_dir: Path | None = None,
+        work_dir: Path | None = None,
+        runner_command: str | None = None,
+    ) -> list[str] | None:
         """Args for decomp-cli vacuum start, or None when the function budget is zero."""
 
         if self.max_functions <= 0:
@@ -61,13 +70,38 @@ class AutonomyBudget:
             str(self.max_functions),
             "--max-attempts",
             str(self.max_attempts_per_function),
+            "--no-sleep",
         ]
         if prompts_dir is not None:
             args.extend(["--prompts-dir", str(prompts_dir)])
+        if work_dir is not None:
+            args.extend(
+                [
+                    "--scores",
+                    str(work_dir / "state" / "scores.json"),
+                    "--log",
+                    str(work_dir / "logs" / "vacuum-progress.log"),
+                    "--session",
+                    str(work_dir / "state" / "vacuum-session.json"),
+                ]
+            )
+        if runner_command:
+            args.extend(["--runner-command", runner_command])
         if self.max_wall_seconds is not None:
             # vacuum.sh accepts --timeout with a duration suffix (e.g. 120s).
             args.extend(["--timeout", f"{int(self.max_wall_seconds)}s"])
         return args
+
+
+def reconstruct_vacuum_runner_command(work_dir: Path, *, max_attempts: int = 3) -> str:
+    """Shell command template for vacuum.sh --runner-command placeholders."""
+
+    work = str(work_dir.resolve())
+    return (
+        f"{sys.executable} -m agentdecompile_recovery.vacuum_runner "
+        f"--work-dir {shlex.quote(work)} --name {{{{name}}}} --prompt-dir {{{{promptDir}}}} "
+        f"--max-attempts {int(max_attempts)}"
+    )
 
 
 def ensure_vacuum_queue(queue: Path) -> Path:

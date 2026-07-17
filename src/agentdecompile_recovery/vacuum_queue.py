@@ -195,6 +195,12 @@ def _write_prompt_stub(prompts_dir: Path, entry: dict[str, Any], *, work_dir: Pa
         "claimBoundary: 'prompt stub seeded from reconstruct tasks; not objdiff proof'\n"
     )
     (prompt_dir / "case.yaml").write_text(case_yaml, encoding="utf-8")
+    settings_yaml = (
+        f"functionName: '{function_name}'\n"
+        "asm: |\n"
+        f"  ; seeded stub for {function_name}\n"
+    )
+    (prompt_dir / "settings.yaml").write_text(settings_yaml, encoding="utf-8")
     if source and Path(str(source)).is_file():
         candidate = prompt_dir / "candidate.c"
         if not candidate.exists():
@@ -205,6 +211,10 @@ def _write_prompt_stub(prompts_dir: Path, entry: dict[str, Any], *, work_dir: Pa
     return prompt_dir
 
 
-def _slugify(value: str) -> str:
+def slugify_function_name(value: str) -> str:
     slug = re.sub(r"[^A-Za-z0-9_.-]+", "_", value.strip()).strip("._-")
     return slug or "unnamed"
+
+
+def _slugify(value: str) -> str:
+    return slugify_function_name(value)

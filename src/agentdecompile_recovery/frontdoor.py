@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from .acquire import acquire_context
-from .autonomy_budget import budget_from_args, ensure_vacuum_queue, write_autonomy_budget_receipt
+from .autonomy_budget import budget_from_args, ensure_vacuum_queue, reconstruct_vacuum_runner_command, write_autonomy_budget_receipt
 from .claim_report import write_claim_report
 from .cli import main as legacy_main
 from .pipeline import RecoveryConfig, RecoveryRunner
@@ -371,7 +371,15 @@ def run_one_shot(args: argparse.Namespace) -> int:
             queue_path=queue,
             prompts_dir=prompts_dir,
         )
-        bridge_args = budget.vacuum_bridge_args(queue=queue, prompts_dir=prompts_dir)
+        bridge_args = budget.vacuum_bridge_args(
+            queue=queue,
+            prompts_dir=prompts_dir,
+            work_dir=work_dir,
+            runner_command=reconstruct_vacuum_runner_command(
+                work_dir,
+                max_attempts=budget.max_attempts_per_function,
+            ),
+        )
         if bridge_args is None:
             write_autonomy_budget_receipt(
                 work_dir,
