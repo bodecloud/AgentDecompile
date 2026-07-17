@@ -1,0 +1,76 @@
+"""Read-only recovery run status for CLI and curated MCP tools."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+
+def _load_json(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def build_recovery_status(work_dir: Path) -> dict[str, Any]:
+    """Summarize reconstruct/recover work-dir progress without claiming semantic parity."""
+
+    work_dir = work_dir.resolve()
+    report = _load_json(work_dir / "report.json")
+    state = _load_json(work_dir / "state.json")
+    analysis = _load_json(work_dir / "analysis-target.json")
+    claim = _load_json(work_dir / "claim-report.json")
+    synth = _load_json(work_dir / "source-synthesis" / "summary.json")
+
+    terminal = None
+    for source in (claim, analysis, state, report):
+        if not source:
+            continue
+        for key in ("terminalStatus", "status"):
+            value = source.get(key)
+            if value:
+                terminal = str(value)
+                break
+        if terminal:
+            break
+
+    stage = None
+    if state:
+        stage = state.get("currentStage") or state.get("stage") or state.get("lastStage")
+    if report and stage is None:
+        stage = report.get("currentStage") or report.get("stage")
+
+    verified = work_dir / "verified"
+    advisory = work_dir / "advisory"
+    verified_count = sum(1 for path in verified.rglob("*") if path.is_file()) if verified.is_dir() else 0
+    advisory_count = sum(1 for path in advisory.rglob("*") if path.is_file()) if advisory.is_dir() else 0
+
+    return {
+        "schema": "agentdecompile.recovery-status.v1",
+        "workDir": str(work_dir),
+        "terminalStatus": terminal or "unknown",
+        "stage": stage,
+        "hasReport": report is not None,
+        "hasClaimReport": claim is not None,
+        "counts": {
+            "verified": verified_count,
+            "advisory": advisory_count,
+            "acceptedCandidates": int((synth or {}).get("acceptedCandidates") or (synth or {}).get("accepted") or 0),
+            "objdiffVerified": int((claim or {}).get("counts", {}).get("objdiffVerified") or 0),
+        },
+        "claimBoundary": (
+            "status summarizes orchestration progress only; "
+            "objdiff-verified-semantic proof remains required for accepted source"
+        ),
+        "paths": {
+            "report": str(work_dir / "report.json") if report is not None else None,
+            "claimReport": str(work_dir / "claim-report.json") if claim is not None else None,
+            "verified": str(verified) if verified.is_dir() else None,
+            "advisory": str(advisory) if advisory.is_dir() else None,
+        },
+    }

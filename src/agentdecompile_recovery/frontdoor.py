@@ -339,6 +339,100 @@ def run_one_shot(args: argparse.Namespace) -> int:
     return rc
 
 
+def build_reconstruct_namespace(
+    input_path: Path,
+    *,
+    work_dir: Path | None = None,
+    preferred_name: str | None = None,
+    context: list[Path] | None = None,
+    context_pack: Path | None = None,
+    acquisition_bundle: Path | None = None,
+    stop_after: str | None = None,
+    autonomous: bool = False,
+    force: bool = False,
+    resume: bool = True,
+) -> argparse.Namespace:
+    """Build a reconstruct argparse namespace for MCP/programmatic callers."""
+
+    argv: list[str] = [str(input_path), "--json"]
+    if work_dir is not None:
+        argv.extend(["--work-dir", str(work_dir)])
+    if preferred_name:
+        argv.extend(["--preferred-name", preferred_name])
+    for path in context or []:
+        argv.extend(["--context", str(path)])
+    if context_pack is not None:
+        argv.extend(["--context-pack", str(context_pack)])
+    if acquisition_bundle is not None:
+        argv.extend(["--acquisition-bundle", str(acquisition_bundle)])
+    if stop_after:
+        argv.extend(["--stop-after", stop_after])
+    if autonomous:
+        argv.append("--autonomous")
+    if force:
+        argv.append("--force")
+    if not resume:
+        argv.append("--no-resume")
+    return build_parser().parse_args(argv)
+
+
+def run_reconstruct_job(
+    input_path: Path,
+    *,
+    work_dir: Path | None = None,
+    preferred_name: str | None = None,
+    context: list[Path] | None = None,
+    context_pack: Path | None = None,
+    acquisition_bundle: Path | None = None,
+    stop_after: str | None = None,
+    autonomous: bool = False,
+    force: bool = False,
+    resume: bool = True,
+) -> dict[str, Any]:
+    """Run reconstruct and return an MCP-friendly status/claim payload."""
+
+    from .claim_report import build_claim_report
+    from .recovery_status import build_recovery_status
+
+    args = build_reconstruct_namespace(
+        input_path,
+        work_dir=work_dir,
+        preferred_name=preferred_name,
+        context=context,
+        context_pack=context_pack,
+        acquisition_bundle=acquisition_bundle,
+        stop_after=stop_after,
+        autonomous=autonomous,
+        force=force,
+        resume=resume,
+    )
+    resolved_work = args.work_dir or default_work_dir(args.input, args.preferred_name)
+    exit_code = run_one_shot(args)
+    claim = build_claim_report(work_dir=resolved_work, terminal_status="unknown")
+    # Prefer on-disk claim-report written by run_one_shot when present.
+    claim_path = resolved_work / "claim-report.json"
+    if claim_path.is_file():
+        try:
+            claim = json.loads(claim_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            pass
+    status = build_recovery_status(resolved_work)
+    terminal = str(claim.get("terminalStatus") or status.get("terminalStatus") or ("matched" if exit_code == 0 else "failed"))
+    return {
+        "tool": "reconstruct",
+        "exitCode": exit_code,
+        "terminalStatus": terminal,
+        "workDir": str(resolved_work.resolve()),
+        "status": status,
+        "claimReport": claim,
+        "claimBoundary": (
+            "orchestration outcome only; semantic recovery requires receipt-backed "
+            "objdiff-verified-semantic artifacts under verified/"
+        ),
+        "autonomousRequested": bool(autonomous),
+    }
+
+
 def upstream_status() -> dict[str, Any]:
     return {
         "schema": "agentdecompile.recovery.upstream-status.v1",
