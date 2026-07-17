@@ -42,12 +42,20 @@ def already_verified(work_dir: Path, name: str) -> bool:
     if not verified.is_dir():
         return False
     slug = slugify_function_name(name)
+    source_suffixes = {".c", ".cpp", ".cc", ".h", ".hpp", ".s", ".asm"}
     for path in verified.rglob("*"):
-        if not path.is_file():
+        if not path.is_file() or path.suffix.lower() not in source_suffixes:
             continue
         stem = path.stem
-        if stem == name or stem == slug or stem.startswith(f"{slug}_") or stem.startswith(f"{name}_"):
+        if stem == name or stem == slug:
             return True
+        for prefix in (slug, name):
+            if not stem.startswith(f"{prefix}_"):
+                continue
+            suffix = stem[len(prefix) + 1 :]
+            # Accept only exact stem_<hexaddr> artifacts, not prefix siblings (Draw vs DrawFrame).
+            if suffix and all(ch in "0123456789abcdefABCDEF" for ch in suffix):
+                return True
     return False
 
 

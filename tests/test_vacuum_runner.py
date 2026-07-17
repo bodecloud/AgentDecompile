@@ -41,6 +41,32 @@ def test_find_source_task_and_already_verified(tmp_path: Path) -> None:
     (work / "verified").mkdir()
     (work / "verified" / "FUN_401000_401000.c").write_text("int x(void){return 0;}\n", encoding="utf-8")
     assert already_verified(work, "FUN_401000") is True
+    (work / "verified" / "DrawFrame_401000.c").write_text("int DrawFrame(void){return 0;}\n", encoding="utf-8")
+    assert already_verified(work, "Draw") is False
+    assert already_verified(work, "DrawFrame") is True
+
+
+def test_reconstruct_vacuum_runner_command_quotes_placeholders(tmp_path: Path) -> None:
+    spaced = tmp_path / "work dir"
+    spaced.mkdir()
+    cmd = reconstruct_vacuum_runner_command(spaced, max_attempts=4)
+    assert "'{{name}}'" in cmd or "\"{{name}}\"" in cmd
+    assert "'{{promptDir}}'" in cmd or "\"{{promptDir}}\"" in cmd
+    # Simulate vacuum placeholder substitution with a spaced prompt path.
+    rendered = cmd.replace("{{name}}", "fn").replace("{{promptDir}}", str(spaced / "prompts" / "fn"))
+    assert "--prompt-dir" in rendered
+    assert "work dir" in rendered
+    budget = AutonomyBudget(max_functions=1, max_attempts_per_function=4)
+    args = budget.vacuum_bridge_args(
+        queue=spaced / "state" / "queue.json",
+        prompts_dir=spaced / "prompts",
+        work_dir=spaced,
+        runner_command=cmd,
+    )
+    assert args is not None
+    assert "--runner-command" in args
+    assert "--no-sleep" in args
+    assert str(spaced / "state" / "scores.json") in args
 
 
 def test_run_vacuum_prompt_missing_and_unsuitable(tmp_path: Path) -> None:
@@ -108,22 +134,3 @@ def test_run_vacuum_prompt_uses_plugin_pipeline(monkeypatch: pytest.MonkeyPatch,
     assert result["status"] == "matched"
     assert calls and calls[0].max_retries == 2
     assert any(path.name.endswith(".c") for path in (work / "verified").iterdir())
-
-
-def test_reconstruct_vacuum_runner_command_includes_placeholders(tmp_path: Path) -> None:
-    cmd = reconstruct_vacuum_runner_command(tmp_path, max_attempts=4)
-    assert "agentdecompile_recovery.vacuum_runner" in cmd
-    assert "{{name}}" in cmd
-    assert "{{promptDir}}" in cmd
-    assert "--max-attempts 4" in cmd
-    budget = AutonomyBudget(max_functions=1, max_attempts_per_function=4)
-    args = budget.vacuum_bridge_args(
-        queue=tmp_path / "state" / "queue.json",
-        prompts_dir=tmp_path / "prompts",
-        work_dir=tmp_path,
-        runner_command=cmd,
-    )
-    assert args is not None
-    assert "--runner-command" in args
-    assert "--no-sleep" in args
-    assert str(tmp_path / "state" / "scores.json") in args

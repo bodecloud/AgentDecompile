@@ -20,11 +20,11 @@ PluginStatus = str
 PipelineEventHandler = Callable[[dict[str, Any]], None]
 
 # Typed stops: do not burn remaining retries after policy decides.
+# promote-or-export is intentionally omitted — prepare_retry only runs after failures.
 AUTONOMY_STOP_ACTIONS = frozenset(
     {
         "stop-budget-exhausted",
         "reject-near-miss",
-        "promote-or-export",
         "block-on-compiler-profile-evidence",
         "reacquire-or-expand-source-facts",
         "repair-boundary-before-retry",

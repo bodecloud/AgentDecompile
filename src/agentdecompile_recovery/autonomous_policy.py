@@ -62,6 +62,8 @@ def choose_next_action(
     verifier_error = (verifier.error if verifier else "") or ""
     generator_error = (generator.error if generator else "") or ""
 
+    verifier_ok = getattr(verifier, "status", None) == "success"
+
     if generator and generator.status == "failure" and "no source candidate" in generator_error:
         action = "reacquire-or-expand-source-facts"
         reason = "candidate generator exhausted compatible source shapes"
@@ -71,9 +73,13 @@ def choose_next_action(
     elif "compile" in verifier_error.lower() or "syntax" in verifier_error.lower():
         action = "regenerate-source-shape"
         reason = "compiler rejected the selected source candidate"
-    elif _is_objdiff_zero_verifier(verifier_data, best_diff):
+    elif verifier_ok and _is_objdiff_zero_verifier(verifier_data, best_diff):
         action = "promote-or-export"
         reason = "verifier reported objdiff-zero accept"
+    elif best_diff == 0 and not verifier_ok:
+        # Quality-filtered / non-exportable zero-diff rows must not stop the retry loop.
+        action = "try-next-generated-candidate"
+        reason = "differenceCount 0 but verifier plugin did not succeed (non-exportable match)"
     elif best_diff is not None and best_diff <= 8:
         action = "try-nearby-source-shape-or-permuter"
         reason = f"candidate is close to match with {best_diff} difference(s); near-miss is not promote"
@@ -101,16 +107,17 @@ def choose_next_action(
 def _is_objdiff_zero_verifier(verifier_data: dict[str, Any], best_diff: int | None) -> bool:
     if best_diff != 0:
         return False
+    status = verifier_data.get("status") or verifier_data.get("bestStatus")
+    if not status:
+        return False
     row = {
-        "status": verifier_data.get("status") or "matched",
+        "status": status,
         "differences": 0,
         "proofTier": verifier_data.get("proofTier") or verifier_data.get("verificationTier"),
     }
-    # differenceCount==0 with matched/default status is enough for policy promote;
-    # stronger proof tiers still pass through is_objdiff_zero_accept.
     if is_objdiff_zero_accept(row):
         return True
-    return str(row.get("status") or "") in {"matched", "source-parity-accepted", "code-slice-matched", ""}
+    return str(status) in {"matched", "source-parity-accepted", "code-slice-matched"}
 
 
 def _coerce_budget(budget: AutonomyBudget | dict[str, Any] | None) -> AutonomyBudget | None:

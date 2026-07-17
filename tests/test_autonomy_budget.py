@@ -144,6 +144,24 @@ def test_policy_promotes_objdiff_zero_not_near_miss() -> None:
     assert near["action"] != "promote-or-export"
 
 
+def test_policy_does_not_promote_failed_zero_diff_verifier() -> None:
+    decision = choose_next_action(
+        {"compilerProfiles": ["clang"]},
+        [
+            {
+                "source-candidate-generator": _Step(),
+                "source-candidate-objdiff": _Step(
+                    status="failure",
+                    error="no exportable match",
+                    data={"differenceCount": 0, "status": "matched", "exportableMatchCount": 0},
+                ),
+            }
+        ],
+    )
+    assert decision["action"] == "try-next-generated-candidate"
+    assert decision["action"] != "promote-or-export"
+
+
 def test_policy_rejects_near_miss_when_budget_exhausted() -> None:
     attempts = [
         {

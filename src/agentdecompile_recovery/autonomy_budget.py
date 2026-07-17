@@ -94,12 +94,18 @@ class AutonomyBudget:
 
 
 def reconstruct_vacuum_runner_command(work_dir: Path, *, max_attempts: int = 3) -> str:
-    """Shell command template for vacuum.sh --runner-command placeholders."""
+    """Shell command template for vacuum.sh --runner-command placeholders.
+
+    Placeholders stay quoted so vacuum's {{name}}/{{promptDir}} substitution remains
+    safe under ``bash -lc`` when paths contain spaces.
+    """
 
     work = str(work_dir.resolve())
     return (
-        f"{sys.executable} -m agentdecompile_recovery.vacuum_runner "
-        f"--work-dir {shlex.quote(work)} --name {{{{name}}}} --prompt-dir {{{{promptDir}}}} "
+        f"{shlex.quote(sys.executable)} -m agentdecompile_recovery.vacuum_runner "
+        f"--work-dir {shlex.quote(work)} "
+        f"--name {shlex.quote('{{name}}')} "
+        f"--prompt-dir {shlex.quote('{{promptDir}}')} "
         f"--max-attempts {int(max_attempts)}"
     )
 
