@@ -47,7 +47,7 @@ class AutonomyBudget:
         )
         return payload
 
-    def vacuum_bridge_args(self, *, queue: Path) -> list[str] | None:
+    def vacuum_bridge_args(self, *, queue: Path, prompts_dir: Path | None = None) -> list[str] | None:
         """Args for decomp-cli vacuum start, or None when the function budget is zero."""
 
         if self.max_functions <= 0:
@@ -62,6 +62,8 @@ class AutonomyBudget:
             "--max-attempts",
             str(self.max_attempts_per_function),
         ]
+        if prompts_dir is not None:
+            args.extend(["--prompts-dir", str(prompts_dir)])
         if self.max_wall_seconds is not None:
             # vacuum.sh accepts --timeout with a duration suffix (e.g. 120s).
             args.extend(["--timeout", f"{int(self.max_wall_seconds)}s"])

@@ -25,6 +25,7 @@ from .cli import main as legacy_main
 from .pipeline import RecoveryConfig, RecoveryRunner
 from .targets import identify_binary
 from .tools import inspect_capabilities, resolve_script_asset
+from .vacuum_queue import seed_vacuum_queue_from_work_dir
 
 
 LEGACY_COMMANDS = {
@@ -363,7 +364,14 @@ def run_one_shot(args: argparse.Namespace) -> int:
             max_wall_seconds=getattr(args, "autonomous_max_wall_seconds", None),
         )
         queue = ensure_vacuum_queue(work_dir / "state" / "queue.json")
-        bridge_args = budget.vacuum_bridge_args(queue=queue)
+        prompts_dir = work_dir / "prompts"
+        seed = seed_vacuum_queue_from_work_dir(
+            work_dir,
+            limit=max(budget.max_functions, 0),
+            queue_path=queue,
+            prompts_dir=prompts_dir,
+        )
+        bridge_args = budget.vacuum_bridge_args(queue=queue, prompts_dir=prompts_dir)
         if bridge_args is None:
             write_autonomy_budget_receipt(
                 work_dir,
@@ -373,6 +381,16 @@ def run_one_shot(args: argparse.Namespace) -> int:
                 reason="autonomous-max-functions is 0; vacuum not started",
             )
             return rc
+        if int(seed.get("seededCount") or 0) == 0 and int(seed.get("pendingCount") or 0) == 0:
+            write_autonomy_budget_receipt(
+                work_dir,
+                budget,
+                requested=True,
+                status="skipped:empty-queue",
+                reason="no source-generation tasks available to seed vacuum pending queue",
+                bridge_args=None,
+            )
+            return rc
         # Advanced hook: bridge to vacuum without making it a peer CLI brand.
         bridge_rc = run_decomp_cli_bridge(bridge_args)
         write_autonomy_budget_receipt(
@@ -380,7 +398,7 @@ def run_one_shot(args: argparse.Namespace) -> int:
             budget,
             requested=True,
             status="bridged" if bridge_rc == 0 else "bridge-failed",
-            reason="vacuum start via decomp-cli bridge",
+            reason=f"vacuum start via decomp-cli bridge; seeded={seed.get('seededCount')}",
             bridge_args=bridge_args,
             bridge_returncode=bridge_rc,
         )

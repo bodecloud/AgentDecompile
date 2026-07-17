@@ -39,6 +39,7 @@ def build_recovery_status(work_dir: Path) -> dict[str, Any]:
     budget = _load_json(work_dir / "autonomy-budget.json")
     queue = _load_json(work_dir / "state" / "queue.json")
     session = _load_json(work_dir / "state" / "vacuum-session.json")
+    seed = _load_json(work_dir / "state" / "vacuum-queue-seed.json")
 
     terminal = None
     for source in (claim, analysis, state, report):
@@ -65,12 +66,14 @@ def build_recovery_status(work_dir: Path) -> dict[str, Any]:
     queue_counts = _queue_counts(queue)
 
     vacuum: dict[str, Any] | None = None
-    if budget is not None or queue is not None or session is not None:
+    if budget is not None or queue is not None or session is not None or seed is not None:
         vacuum = {
             "budgetStatus": (budget or {}).get("status"),
             "requested": bool((budget or {}).get("requested")) if budget is not None else False,
             "queueCounts": queue_counts,
             "sessionStatus": (session or {}).get("status") if session is not None else None,
+            "seededCount": int((seed or {}).get("seededCount") or 0) if seed is not None else None,
+            "seedStatus": (seed or {}).get("status") if seed is not None else None,
             "claimBoundary": (
                 "vacuum/budget fields summarize autonomy loop progress only; "
                 "they are not objdiff-verified-semantic proof"
