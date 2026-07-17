@@ -6,7 +6,6 @@ return ``unsupported-slice-verify`` without failing inventory.
 
 from __future__ import annotations
 
-import json
 import shutil
 import subprocess
 from pathlib import Path
