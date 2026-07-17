@@ -18,6 +18,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .acquire import acquire_context
+from .claim_report import write_claim_report
 from .cli import main as legacy_main
 from .pipeline import RecoveryConfig, RecoveryRunner
 from .targets import identify_binary
@@ -84,6 +86,28 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("input", type=Path, help="Binary, archive, installer, or app directory to recover.")
     parser.add_argument("--preferred-name", help="Preferred executable basename when input is a folder.")
     parser.add_argument("--work-dir", type=Path, help="Run/state directory. Defaults to target/agentdecompile-reconstruct/<stable-target-id>.")
+    parser.add_argument(
+        "--context",
+        type=Path,
+        action="append",
+        default=[],
+        help="Additional context file or directory (notes, partial source, Ghidra dumps, JSON facts). Repeatable.",
+    )
+    parser.add_argument(
+        "--context-pack",
+        type=Path,
+        help="Previously generated context-pack or acquisition-bundle directory.",
+    )
+    parser.add_argument(
+        "--acquisition-bundle",
+        type=Path,
+        help="Explicit acquisition-bundle directory (skips rediscovery from target fingerprint).",
+    )
+    parser.add_argument(
+        "--autonomous",
+        action="store_true",
+        help="Enable bounded vacuum/repair autonomy after the core recovery stages (advanced).",
+    )
     parser.add_argument(
         "--resume",
         action=argparse.BooleanOptionalAction,
@@ -196,6 +220,33 @@ def run_one_shot(args: argparse.Namespace) -> int:
     if args.force:
         args.resume = False
     work_dir = args.work_dir or default_work_dir(args.input, args.preferred_name)
+    work_dir.mkdir(parents=True, exist_ok=True)
+
+    acquisition_receipt = None
+    if args.context:
+        acquisition_receipt = acquire_context(
+            target_input=args.input,
+            context_paths=list(args.context),
+            out_dir=work_dir / "acquisition",
+            preferred_name=args.preferred_name,
+            repo_root=repo_root(),
+        )
+        receipt_path = work_dir / "acquisition" / "acquire.json"
+        receipt_path.parent.mkdir(parents=True, exist_ok=True)
+        receipt_path.write_text(json.dumps(acquisition_receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        if not args.json:
+            print(
+                json.dumps(
+                    {
+                        "status": "acquired",
+                        "claimBoundary": acquisition_receipt.get("claimBoundary"),
+                        "bundleDir": acquisition_receipt.get("bundleDir"),
+                        "entityHint": (acquisition_receipt.get("contextPack") or {}).get("entityCount"),
+                    },
+                    indent=2,
+                )
+            )
+
     config = RecoveryConfig(
         input_path=args.input,
         work_dir=work_dir,
@@ -209,6 +260,10 @@ def run_one_shot(args: argparse.Namespace) -> int:
         enable_byte_authority=not args.no_byte_authority,
         enable_legacy_adapters=False,
         function_analysis=args.function_analysis,
+        context_paths=tuple(args.context),
+        context_pack=args.context_pack,
+        acquisition_bundle=args.acquisition_bundle
+        or (Path(str(acquisition_receipt["bundleDir"])) if acquisition_receipt and acquisition_receipt.get("bundleDir") else None),
         source_task_limit=args.source_task_limit,
         source_task_offset=args.source_task_offset,
         source_synthesis_engine=args.source_synthesis_engine,
@@ -232,8 +287,52 @@ def run_one_shot(args: argparse.Namespace) -> int:
     )
     rc = RecoveryRunner(config).run()
     report_path = work_dir / "report.json"
-    if report_path.exists() and not args.json:
-        print(json.dumps({"status": "complete" if rc == 0 else "failed", "workDir": str(work_dir), "report": str(report_path)}, indent=2))
+    analysis_path = work_dir / "analysis-target.json"
+    terminal = "matched" if rc == 0 else "failed"
+    if analysis_path.exists():
+        try:
+            analysis = json.loads(analysis_path.read_text(encoding="utf-8"))
+            if str(analysis.get("terminalStatus") or "").startswith("blocked:toolchain"):
+                terminal = "blocked:toolchain"
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            pass
+    state_path = work_dir / "state.json"
+    if terminal != "blocked:toolchain" and state_path.exists():
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            if state.get("terminalStatus") == "blocked:toolchain" or state.get("status") == "blocked:toolchain":
+                terminal = "blocked:toolchain"
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            pass
+    if report_path.exists() or terminal == "blocked:toolchain":
+        if rc == 0 and (work_dir / "source-synthesis" / "summary.json").exists():
+            try:
+                synth = json.loads((work_dir / "source-synthesis" / "summary.json").read_text(encoding="utf-8"))
+                accepted = int(synth.get("acceptedCandidates") or synth.get("accepted") or 0)
+                if accepted == 0 and terminal == "matched":
+                    terminal = "partial"
+            except (OSError, json.JSONDecodeError, TypeError, ValueError):
+                pass
+        claim_path = write_claim_report(work_dir, terminal_status=terminal)
+        if not args.json:
+            print(
+                json.dumps(
+                    {
+                        "status": terminal,
+                        "workDir": str(work_dir),
+                        "report": str(report_path),
+                        "claimReport": str(claim_path),
+                        "claimBoundary": "report status is orchestration outcome; semantic recovery requires objdiff-verified-semantic artifacts under verified/",
+                        "autonomousRequested": bool(args.autonomous),
+                    },
+                    indent=2,
+                )
+            )
+    if rc == 0 and args.autonomous:
+        # Advanced hook: bridge to vacuum without making it a peer CLI brand.
+        bridge_rc = run_decomp_cli_bridge(["vacuum", "start", "--queue", str(work_dir / "state" / "queue.json"), "--max-functions", "1"])
+        if bridge_rc != 0:
+            return bridge_rc
     return rc
 
 
