@@ -318,7 +318,6 @@ def vacuum_row_from_verify(prompt_name: str, verify: dict[str, Any]) -> dict[str
     function_name = str(verify.get("function_name") or prompt_name.split("_", 1)[-1])
     source = verify.get("candidate_source")
     if not source:
-        candidate = Path(str(verify.get("prompt") or prompt_name))
         # prompt field is name not path; resolve via prompts dir in caller if needed
         return None
     source_path = Path(str(source))

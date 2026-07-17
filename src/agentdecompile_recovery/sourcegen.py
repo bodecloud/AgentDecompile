@@ -16986,11 +16986,8 @@ def rep_stos_global_clear_candidate(task: dict[str, Any], data: bytes) -> dict[s
         return None
     c_name = c_identifier(str(task.get("name") or "recovered_function"))
     first_base = int(decoded["firstBase"])
-    first_dwords = int(decoded["firstDwords"])
-    first_bytes = int(decoded["firstTrailingBytes"])
     zero_globals = [int(value) for value in decoded["zeroGlobals"]]
     second_base = int(decoded["secondBase"])
-    second_dwords = int(decoded["secondDwords"])
     source = "\n".join(
         [
             "/*",
