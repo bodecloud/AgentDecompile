@@ -68,7 +68,8 @@ def parse_objdiff_report(returncode: int, output: str) -> dict[str, Any]:
             try:
                 match_percents.append(float(item["match_percent"]))
             except (TypeError, ValueError):
-                pass
+                # Malformed percentages provide no proof; keep parsing other sections.
+                continue
 
     if match_percents and all(value == 100 for value in match_percents):
         differences = 0

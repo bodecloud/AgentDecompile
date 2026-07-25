@@ -298,8 +298,6 @@ def test_dump_source_tree_layers_and_format_once(tmp_path: Path, monkeypatch: py
 
     import json
 
-    import agentdecompile_recovery.source_dump as source_dump
-
     format_calls: list[str] = []
 
     def _counting_format(source: str, suffix: str):
@@ -310,7 +308,10 @@ def test_dump_source_tree_layers_and_format_once(tmp_path: Path, monkeypatch: py
             "tool": "test-stub",
         }
 
-    monkeypatch.setattr(source_dump, "format_source_text", _counting_format)
+    monkeypatch.setattr(
+        "agentdecompile_recovery.source_dump.format_source_text",
+        _counting_format,
+    )
 
     summary = tmp_path / "summary.jsonl"
     clean_path = tmp_path / "clean.c"
