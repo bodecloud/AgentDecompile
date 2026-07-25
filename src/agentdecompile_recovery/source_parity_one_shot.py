@@ -643,6 +643,12 @@ def _analysis_target_sha(state: dict[str, Any]) -> str:
     return str(state.get("binarySha256") or "")
 
 
+def _extend_with_target_sha(args: list[str], state: dict[str, Any]) -> None:
+    target_sha = _analysis_target_sha(state)
+    if target_sha:
+        args.extend(["--target-sha", target_sha])
+
+
 def stage_batch_decompile(
     profile: ProfileConfig,
     state: dict[str, Any],
@@ -718,9 +724,7 @@ def stage_match_trivial(
         "--limit",
         str(limit),
     ]
-    target_sha = _analysis_target_sha(state)
-    if target_sha:
-        args.extend(["--target-sha", target_sha])
+    _extend_with_target_sha(args, state)
     if vc_root:
         args.extend(["--vc-root", str(vc_root)])
     if wineprefix:
@@ -769,9 +773,7 @@ def stage_match_reloc(
         "--limit",
         str(limit),
     ]
-    target_sha = _analysis_target_sha(state)
-    if target_sha:
-        args.extend(["--target-sha", target_sha])
+    _extend_with_target_sha(args, state)
     if vc_root:
         args.extend(["--vc-root", str(vc_root)])
     if wineprefix:
@@ -1113,9 +1115,7 @@ def stage_synthesize(
     ]
     if incremental:
         args.extend(["--offset", str(prior_limit)])
-    target_sha = _analysis_target_sha(state)
-    if target_sha:
-        args.extend(["--target-sha", target_sha])
+    _extend_with_target_sha(args, state)
     args.extend(["--max-variants-per-function", str(max_variants_per_function)])
     args.extend(["--max-attempts-per-function", str(max_attempts_per_function)])
     args.extend(["--max-attempts-per-function-policy", max_attempts_per_function_policy])

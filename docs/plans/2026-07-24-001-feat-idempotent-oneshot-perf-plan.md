@@ -38,6 +38,7 @@ Cold swkotor-class recovery still pays for two full Ghidra analyses, under-threa
 ## Design
 
 ```mermaid
+
 flowchart TD
   prep[prepare-analysis-image] --> ensure[ensure_analyzed_program]
   ensure --> inv[export_function_inventory]
@@ -48,6 +49,7 @@ flowchart TD
   match --> dump[dump declared summaries]
   facts --> dump
 ```
+
 
 ## Work units
 

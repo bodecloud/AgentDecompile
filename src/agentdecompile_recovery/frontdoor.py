@@ -15,6 +15,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -606,8 +607,6 @@ def _jsonl_compatible_with_analysis(path: Path, expected_sha: str) -> bool:
 
 def run_dump_source(args: argparse.Namespace, work_dir: Path) -> int:
     """Export Borealis-shaped dump from existing proofs + optional Ghidra advisory."""
-
-    import time
 
     from .source_dump import dump_source_tree
     from .stage_timings import load_stage_timings, record_stage, write_stage_timings

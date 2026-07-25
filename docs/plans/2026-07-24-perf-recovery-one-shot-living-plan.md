@@ -1,6 +1,6 @@
 # Living plan: one-shot recovery performance
 
-**Status:** active  
+**Status:** completed  
 **Created:** 2026-07-24  
 **Last updated:** 2026-07-24  
 **Code:** `src/agentdecompile_recovery/`, `src/agentdecompile_cli/mcp_utils/batch_decompile.py`, `scripts/swkotor-match-*.py`  
@@ -54,20 +54,21 @@ flowchart TD
 - Batched in-memory dump (`PendingWrites`), format-once-per-file, cached `clang-format` path
 - Match writers embed `sourceText`; dump prefers embedded text + sha check
 - Idempotency policy documented in AGENTS, `.cursorrules`, CRITICAL_PATH, STRATEGY
-- **U1** Fail-closed proof gate: empty/unparseable objdiff, fallback rejected by `is_proven_zero`, emitter denylist, stale-object unlink, ladder denominator = function-candidates only
+- **U1** Fail-closed proof gate: empty/unparseable objdiff, fallback rejected by `is_proven_zero`, emitter denylist, stale-object unlink, ladder denominator = function-candidates only; shell `verify-objdiff.sh` fail-closed
 - **U2** Shared Ghidra analysis: `ensure_analyzed_program` + inventory `-process -noanalysis` (no `-deleteProject` on shared path)
-- **U3** `thread_count` default `min(cpu,16)`; `batch-decompile` stage writes facts JSONL with `force_analysis=False`
-- **U4** Fresh dump refuses undeclared siblings; match-cache keys include analysis-image digest; cache hits re-embed `sourceText`
-- **U5** `--dump-layers` (default `verified,port`); `stage-timings.json` written per one-shot stage
+- **U3** `thread_count` default `min(cpu,16)`; CLI `--decompile-threads`; `batch-decompile` stage writes facts JSONL with `force_analysis=False`
+- **U4** Fresh dump refuses undeclared siblings and unmarked/mismatched digests; match-cache keys include analysis-image digest; synthesize/match pass `--target-sha`
+- **U5** `--dump-layers` (default `verified,port`); shared `stage-timings.json` including `dump-source`
 
 **Delta update (2026-07-24)**
 
 | Unit | Result |
 |------|--------|
-| U1–U5 | Landed on `feat/idempotent-oneshot-perf`; unit tests green for honesty, ghidra analysis, batch threads, fresh dump, layers, timings |
+| U1–U5 | Landed on `feat/idempotent-oneshot-perf` |
+| Post-review | Shell objdiff fail-closed; synthesize target-sha; dump digest gate; dump timings |
 | Remaining scale | G14 per-worker Wine prefixes; G15 synth wall; G16 SSD work-dir guidance (operator) |
 
-**Next**
+**Next** (backlog only — outside U1–U5)
 
 1. Optional per-worker Wine prefixes (G14)
 2. Synth wall-time / compile cache (G15) without skipping inventory
@@ -78,34 +79,31 @@ flowchart TD
 
 | ID | Issue | Files |
 |----|-------|-------|
-| G1 | Empty objdiff stdout counted as zero diff | `source_parity_synthesize.parse_objdiff_report` |
-| G2 | objdump fallback in `is_proven_zero` | `match_cache.py`, dump authority |
-| G3 | Compile ok when stale object exists | `package_verify`, MSVC helpers |
-| G4 | Byte-emitter denylist gaps (`_asm`, MASM db/dw) | `source_dump.looks_like_byte_emitter` |
+| G1 | Empty objdiff stdout counted as zero diff | ~~fixed~~ |
+| G2 | objdump fallback in `is_proven_zero` | ~~fixed~~ |
+| G3 | Compile ok when stale object exists | ~~fixed~~ |
+| G4 | Byte-emitter denylist gaps (`_asm`, MASM db/dw) | ~~fixed~~ |
 
 ### P1 — One analysis + faster decompile
 
 | ID | Issue | Files |
 |----|-------|-------|
-| G5 | Inventory `-deleteProject` throws analysis away | `source_parity_one_shot.stage_inventory` |
-| G6 | ghidrecomp re-analyzes from scratch | `ghidra_analysis.py`, frontdoor |
-| G7 | `thread_count=2` hardcoded | `batch_decompile.py`, MCP schema |
-| G8 | Reconstruct does not write facts this run | frontdoor / pipeline |
+| G5–G8 | Dual analysis / under-threaded decompile | ~~fixed in U2–U3~~ |
 
-### P2 — Fresh-run I/O
+### P2 — Idempotent dump / cache
 
 | ID | Issue | Files |
 |----|-------|-------|
-| G9 | Silent sibling JSONL auto-load | `frontdoor.run_dump_source` |
-| G10 | Cache key missing analysis-image digest | `match_cache.py` |
-| G11 | Cache hit emits path-only rows | match scripts, synthesize |
-| G12 | Ladder denominator can shrink | proof ladder / gates |
+| G9 | Silent sibling JSONL auto-load | ~~fixed~~ |
+| G10 | Cache key missing analysis-image digest | ~~fixed~~ |
+| G11 | Cache hit emits path-only rows | ~~fixed~~ |
+| G12 | Ladder denominator can shrink | ~~fixed~~ |
 
 ### P3 — Throughput (still full coverage)
 
 | ID | Issue | Files |
 |----|-------|-------|
-| G13 | Always dual advisory + Port write | `--dump-layers` |
+| G13 | Always dual advisory + Port write | ~~`--dump-layers`~~ |
 | G14 | Shared WINEPREFIX false mismatches | docs, per-worker prefixes |
 | G15 | Exhaustive synth wall time | workers, compile cache, timings |
 | G16 | USB work-dir I/O | use local SSD; archive after |
@@ -121,4 +119,4 @@ flowchart TD
 
 ## Related plans
 
-[2026-07-13-feat-unified-source-parity-recovery.md](2026-07-13-feat-unified-source-parity-recovery.md) — product fold-in history. **This file** is the active perf/idempotency tracker. Embed `sourceText` and dump batch I/O are landed here.
+[2026-07-13-feat-unified-source-parity-recovery.md](2026-07-13-feat-unified-source-parity-recovery.md) — product fold-in history. **This file** tracked U1–U5 perf/idempotency (now completed). Embed `sourceText` and dump batch I/O are landed here.
