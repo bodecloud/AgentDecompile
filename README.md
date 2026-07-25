@@ -1,10 +1,12 @@
-# AgentDecompile - Your AI Companion for Ghidra
+# AgentDecompile
 
-> AI-powered code analysis and reverse engineering, directly inside Ghidra.
+**Connect AI to Ghidra.**
 
-**AgentDecompile** bridges the gap between Ghidra and modern Artificial Intelligence. It allows you to chat with your binaries, automating the tedious parts of reverse engineering so you can focus on the logic that matters.
+Run an MCP server that talks to your Ghidra project. List functions, decompile code, rename symbols, and recover source you can rebuild.
 
-Built on the open standard [Model Context Protocol (MCP)](https://modelcontextprotocol.io), AgentDecompile turns Ghidra into an intelligent agent that can read, understand, and explain code for you.
+AgentDecompile exposes live Ghidra state through the open [Model Context Protocol (MCP)](https://modelcontextprotocol.io), so agents work from functions, references, memory, and decompilation instead of guessing from filenames.
+
+[Quick start](#installation) · [Usage guide](USAGE.md) · [Tool list](TOOLS_LIST.md) · [Docs landing page](docs/index.html)
 
 ```mermaid
 flowchart TD
@@ -13,7 +15,7 @@ flowchart TD
   B --> D[AgentDecompile runtime]
   C --> D
   D --> E[PyGhidra and Ghidra projects]
-  D --> F[67 canonical tools and 3 resources]
+  D --> F[70 canonical tools and 3 resources]
 ```
 
 ## Session-Validated Commands
