@@ -1393,9 +1393,16 @@ def main() -> int:
                 target_sha=str(args.target_sha or ""),
             )
             if hit is not None:
-                cached_rows.append({**hit, "cacheHit": True})
-                skipped_cached += 1
-                continue
+                from agentdecompile_recovery.source_parity_synthesize import record_with_source_text
+
+                try:
+                    cached_rows.append(record_with_source_text({**hit, "cacheHit": True}))
+                except FileNotFoundError:
+                    # Stale path-only cache row: rematch rather than emit incomplete proof.
+                    pass
+                else:
+                    skipped_cached += 1
+                    continue
         jobs.append(
             {
                 "row": row,

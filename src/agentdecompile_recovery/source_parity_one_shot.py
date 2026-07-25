@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +21,7 @@ from .ghidra_analysis import (
     validate_inventory_text_coverage,
 )
 from .source_export import collect_vacuum_prompt_matches, count_vacuum_matched_prompts
+from .stage_timings import empty_timings, record_stage, write_stage_timings
 from .state import atomic_write_json, read_json
 from .targets import is_pe_binary, resolve_target, sha256_file
 
@@ -29,6 +31,7 @@ STAGES: tuple[str, ...] = (
     "discover",
     "prepare",
     "inventory",
+    "batch-decompile",
     "match-trivial",
     "match-reloc-wrappers",
     "queue",
@@ -630,6 +633,65 @@ def stage_inventory(profile: ProfileConfig, state: dict[str, Any], refresh: bool
         ghidraInventoryExportCommand=(inventory_export or {}).get("exportCommand"),
     )
 
+def _analysis_target_sha(state: dict[str, Any]) -> str:
+    stages = state.get("stages") or {}
+    for name in ("inventory", "batch-decompile", "prepare"):
+        stage = stages.get(name) or {}
+        digest = stage.get("analysisBinarySha256") or stage.get("binarySha256")
+        if digest:
+            return str(digest)
+    return str(state.get("binarySha256") or "")
+
+
+def stage_batch_decompile(
+    profile: ProfileConfig,
+    state: dict[str, Any],
+    *,
+    thread_count: int | None = None,
+) -> None:
+    """Reuse shared Ghidra project for ghidrecomp decompile; write facts for dump."""
+
+    from agentdecompile_cli.mcp_utils.batch_decompile import build_batch_decompile_payload
+
+    from .batch_decompile_facts import project_decompiled_files_to_facts
+
+    analysis_binary = inventory_binary(profile, state)
+    analysis_digest = sha256_file(analysis_binary)
+    inv_stage = (state.get("stages") or {}).get("inventory") or {}
+    project_path = Path(str(inv_stage.get("ghidraProjectPath") or shared_project_root(profile.unpack_dir)))
+    project_path.mkdir(parents=True, exist_ok=True)
+    output_root = profile.unpack_dir / "ghidrecomp-batch"
+    output_root.mkdir(parents=True, exist_ok=True)
+    # Shared analysis already ran; never force a second full analysis here.
+    payload = build_batch_decompile_payload(
+        analysis_binary,
+        output_path=output_root,
+        project_path=project_path,
+        force_analysis=False,
+        thread_count=thread_count,
+    )
+    facts_path = profile.unpack_dir / "facts" / "function-facts.jsonl"
+    projection = project_decompiled_files_to_facts(
+        list(payload.get("decompiledFiles") or []),
+        out_jsonl=facts_path,
+    )
+    mark_stage(
+        state,
+        "batch-decompile",
+        "complete",
+        analysisBinary=str(analysis_binary),
+        analysisBinarySha256=analysis_digest,
+        ghidraProjectPath=str(project_path),
+        ghidraProjectName=inv_stage.get("ghidraProjectName"),
+        outputPath=str(output_root),
+        factsJsonl=str(facts_path),
+        threadCount=payload.get("threadCount"),
+        forceAnalysis=False,
+        decompiledFiles=int((payload.get("counts") or {}).get("decompiledFiles") or 0),
+        factsWritten=projection.get("written"),
+    )
+
+
 def stage_match_trivial(
     profile: ProfileConfig,
     state: dict[str, Any],
@@ -655,6 +717,9 @@ def stage_match_trivial(
         "--limit",
         str(limit),
     ]
+    target_sha = _analysis_target_sha(state)
+    if target_sha:
+        args.extend(["--target-sha", target_sha])
     if vc_root:
         args.extend(["--vc-root", str(vc_root)])
     if wineprefix:
@@ -703,6 +768,9 @@ def stage_match_reloc(
         "--limit",
         str(limit),
     ]
+    target_sha = _analysis_target_sha(state)
+    if target_sha:
+        args.extend(["--target-sha", target_sha])
     if vc_root:
         args.extend(["--vc-root", str(vc_root)])
     if wineprefix:
@@ -1118,6 +1186,11 @@ def _register_runners() -> None:
                 ctx["refresh_inventory"],
                 ghidra=ctx["ghidra"],
             ),
+            "batch-decompile": lambda ctx: stage_batch_decompile(
+                ctx["profile"],
+                ctx["state"],
+                thread_count=ctx.get("decompile_thread_count"),
+            ),
             "match-trivial": lambda ctx: stage_match_trivial(
                 ctx["profile"],
                 ctx["state"],
@@ -1282,7 +1355,9 @@ def run_pipeline(
         "force_rematch": force_rematch,
         "workers": workers,
         "force_export_downstream": False,
+        "decompile_thread_count": None,
     }
+    timings = empty_timings(profile.state_dir)
     stop_idx = stage_index(stop_after) if stop_after else len(STAGES) - 1
     for idx, name in enumerate(STAGES):
         if idx > stop_idx:
@@ -1410,16 +1485,22 @@ def run_pipeline(
         mark_stage(state, name, "running")
         save_state(state_path, state)
         append_event(profile.state_dir, {"stage": name, "status": "running", "at": now_iso()})
+        started = time.monotonic()
         try:
             STAGE_RUNNERS[name](ctx)
+            record_stage(timings, name, started=started, status="complete")
+            write_stage_timings(profile.state_dir, timings)
             save_state(state_path, state)
             append_event(profile.state_dir, {"stage": name, "status": "complete", "at": now_iso()})
         except Exception as exc:
+            record_stage(timings, name, started=started, status="failed", error=str(exc))
+            write_stage_timings(profile.state_dir, timings)
             mark_stage(state, name, "failed", error=str(exc))
             save_state(state_path, state)
             append_event(profile.state_dir, {"stage": name, "status": "failed", "error": str(exc), "at": now_iso()})
             write_report(profile, state, report_path)
             raise
+    write_stage_timings(profile.state_dir, timings)
     write_report(profile, state, report_path)
     return json.loads(report_path.read_text(encoding="utf-8"))
 

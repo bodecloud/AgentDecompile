@@ -222,6 +222,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip recovery stages; only build --dump-source from existing receipts/summaries.",
     )
     parser.add_argument(
+        "--dump-layers",
+        default="verified,port",
+        help="Comma-separated dump layers: verified,port,advisory (default: verified,port).",
+    )
+    parser.add_argument(
+        "--dump-allow-leftovers",
+        action="store_true",
+        help="Allow undeclared sibling match JSONL / merged facts auto-load (operator resume only).",
+    )
+    parser.add_argument(
         "--workers",
         type=int,
         default=0,
@@ -542,24 +552,39 @@ def run_dump_source(args: argparse.Namespace, work_dir: Path) -> int:
     from .source_dump import dump_source_tree
 
     out_dir = Path(args.dump_source)
+    # Fresh mode (default): only this work_dir's declared receipts + explicit flags.
+    # Leftover sibling JSONL / repo-root merged facts are operator-resume only.
+    allow_leftovers = bool(
+        getattr(args, "dump_allow_leftovers", False) or getattr(args, "dump_source_only", False)
+    )
     summaries: list[Path] = []
-    # Proof receipts written by this run's synthesis stage (JSONL only — the
-    # dump reader consumes matched/code-slice JSONL rows).
+    # Proof receipts written by this run's synthesis / match stages.
     for rel in (
         "source-synthesis/accepted.jsonl",
         "source-synthesis/code-slice-matches.jsonl",
         "source-synthesis/source-shape-matches.jsonl",
+        "swkotor-trivial-matches/summary.jsonl",
+        "swkotor-reloc-wrapper-matches/summary.jsonl",
     ):
         path = work_dir / rel
         if path.exists():
             summaries.append(path)
-    # Sibling match receipts under this run's target tree (not blind cwd probes).
-    for sibling in (
-        work_dir.parent / "swkotor-trivial-matches" / "summary.jsonl",
-        work_dir.parent / "swkotor-reloc-wrapper-matches" / "summary.jsonl",
-    ):
-        if sibling.exists():
-            summaries.append(sibling)
+
+    if allow_leftovers:
+        # Sibling match receipts under target/ (operator resume).
+        target_root = (
+            work_dir.parent.parent
+            if work_dir.parent.name == "agentdecompile-reconstruct"
+            else work_dir.parent
+        )
+        for sibling in (
+            target_root / "swkotor-trivial-matches" / "summary.jsonl",
+            target_root / "swkotor-reloc-wrapper-matches" / "summary.jsonl",
+            work_dir.parent / "swkotor-trivial-matches" / "summary.jsonl",
+            work_dir.parent / "swkotor-reloc-wrapper-matches" / "summary.jsonl",
+        ):
+            if sibling.exists():
+                summaries.append(sibling)
 
     # Operator-authored explicit summary list (paths under the operator's control).
     list_file = work_dir / "export-summaries.txt"
@@ -581,24 +606,32 @@ def run_dump_source(args: argparse.Namespace, work_dir: Path) -> int:
 
     ghidra_facts = getattr(args, "ghidra_facts", None)
     if ghidra_facts is None:
-        for candidate in (
+        fresh_facts_candidates = (
             work_dir / "source-generation" / "function-facts.jsonl",
             work_dir / "acquisition" / "function-facts.jsonl",
-            Path("target/swkotor-ghidra-merged-decomp.jsonl"),
-        ):
+            work_dir / "facts" / "function-facts.jsonl",
+            work_dir / "unpack" / "facts" / "function-facts.jsonl",
+        )
+        leftover_facts_candidates = (Path("target/swkotor-ghidra-merged-decomp.jsonl"),)
+        for candidate in fresh_facts_candidates + (leftover_facts_candidates if allow_leftovers else ()):
             if candidate.exists():
                 ghidra_facts = candidate
                 break
 
-    # Optional pre-materialized advisory dir (e.g. from ghidra_advisory batch CLI).
+    # Prefer facts JSONL. Only seed from a pre-materialized advisory dir when
+    # no facts file was provided (avoids double banners / double filenames).
     advisory_seed = work_dir / "advisory" / "ghidra"
+    use_advisory_seed = advisory_seed.is_dir() and ghidra_facts is None and allow_leftovers
 
+    dump_layers = getattr(args, "dump_layers", None) or "verified,port"
     manifest = dump_source_tree(
         out_dir=out_dir,
         summaries=unique,
         ghidra_facts=Path(ghidra_facts) if ghidra_facts else None,
-        advisory_dir=advisory_seed if advisory_seed.is_dir() else None,
+        advisory_dir=advisory_seed if use_advisory_seed else None,
         target_name=args.input.name if hasattr(args.input, "name") else "binary",
+        clean=True,
+        layers=dump_layers,
     )
     receipt = {
         "schema": "agentdecompile.dump-source.v1",
@@ -607,6 +640,8 @@ def run_dump_source(args: argparse.Namespace, work_dir: Path) -> int:
         "workDir": str(work_dir),
         "summaries": [str(p) for p in unique],
         "ghidraFacts": str(ghidra_facts) if ghidra_facts else None,
+        "dumpLayers": manifest.get("layers"),
+        "freshMode": not allow_leftovers,
         "matchedCount": manifest.get("matchedCount"),
         "codeSliceMatchedCount": manifest.get("codeSliceMatchedCount"),
         "ghidraCount": manifest.get("ghidraCount"),

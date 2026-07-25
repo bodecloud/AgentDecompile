@@ -392,6 +392,22 @@ def match_source_key(row: dict[str, Any]) -> str:
     )
 
 
+def parse_dump_layers(raw: str | Iterable[str] | None) -> set[str]:
+    """Parse dump layer set. Empty/None → all layers."""
+
+    if raw is None:
+        return {"verified", "port", "advisory"}
+    if isinstance(raw, str):
+        parts = [p.strip().lower() for p in raw.split(",") if p.strip()]
+    else:
+        parts = [str(p).strip().lower() for p in raw if str(p).strip()]
+    if not parts:
+        return {"verified", "port", "advisory"}
+    allowed = {"verified", "port", "advisory"}
+    selected = {p for p in parts if p in allowed}
+    return selected or allowed
+
+
 def dump_source_tree(
     *,
     out_dir: Path,
@@ -401,15 +417,21 @@ def dump_source_tree(
     target_name: str = "swkotor.exe",
     borealis_reference: Path | None = None,
     clean: bool = True,
+    layers: str | Iterable[str] | None = None,
 ) -> dict[str, Any]:
     """Write verified/ + advisory/ghidra/ + Port/CODE + README/MANIFEST/CLAIMS."""
 
+    selected_layers = parse_dump_layers(layers)
+    write_verified = "verified" in selected_layers
+    write_port = "port" in selected_layers
+    write_advisory = "advisory" in selected_layers
+
     matched = collect_matched(summaries)
-    ghidra_rows = collect_ghidra(ghidra_facts)
+    ghidra_rows = collect_ghidra(ghidra_facts) if write_advisory else []
     # Prefer explicit facts JSONL when present. Re-reading advisory_dir on top of
     # the same facts double-counts units and produces nested banners / double-
     # prefixed filenames (entry_entry_FUN_…).
-    if advisory_dir and advisory_dir.is_dir() and not ghidra_rows:
+    if write_advisory and advisory_dir and advisory_dir.is_dir() and not ghidra_rows:
         for path in sorted(advisory_dir.glob("**/*.c")):
             text = path.read_text(encoding="utf-8", errors="replace")
             if not text.strip():
@@ -499,14 +521,15 @@ def dump_source_tree(
             ]
         )
         body = header + styled
-        buckets[(module, stem)].append((row, body))
+        if write_port:
+            buckets[(module, stem)].append((row, body))
 
         # Per-function verified shard (objdiff 0 full-object only).
-        if authority == "objdiff-matched":
+        if write_verified and authority == "objdiff-matched":
             verified_count += 1
             shard = verified_dir / f"{entry}_{row.get('name')}.c"
             pending.add(shard, body)
-        elif authority == "code-slice-matched":
+        elif write_verified and authority == "code-slice-matched":
             code_slice_count += 1
             shard = verified_dir / "code-slice" / f"{entry}_{row.get('name')}.c"
             pending.add(shard, body.replace("Authority:", "Authority (code-slice):", 1))
@@ -533,9 +556,13 @@ def dump_source_tree(
             ]
         )
         body = header + decompiled
-        buckets[(module, stem)].append((row, body))
+        if write_port:
+            buckets[(module, stem)].append((row, body))
         adv_path = advisory_out / f"{entry}_{row.get('name')}.c"
         pending.add(adv_path, body)
+
+    if not write_port:
+        buckets.clear()
 
     manifest_functions: list[dict[str, Any]] = []
     written_files: list[str] = []
@@ -663,6 +690,7 @@ def dump_source_tree(
         "rejectedByteEmitters": rejected_emitters,
         "verifiedShardCount": verified_count,
         "codeSliceShardCount": code_slice_count,
+        "layers": sorted(selected_layers),
         "files": written_files,
         "functions": manifest_functions,
         "claimBoundary": (
