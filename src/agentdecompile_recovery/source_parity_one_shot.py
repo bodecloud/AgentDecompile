@@ -13,6 +13,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from .ghidra_analysis import (
+    export_function_inventory,
+    ensure_analyzed_program,
+    shared_project_root,
+    validate_inventory_text_coverage,
+)
 from .source_export import collect_vacuum_prompt_matches, count_vacuum_matched_prompts
 from .state import atomic_write_json, read_json
 from .targets import is_pe_binary, resolve_target, sha256_file
@@ -572,40 +578,38 @@ def stage_inventory(profile: ProfileConfig, state: dict[str, Any], refresh: bool
             sectionCounts=section_counts,
         )
         return
-    if jsonl.exists():
-        jsonl.unlink()
     jsonl.parent.mkdir(parents=True, exist_ok=True)
     binary = inventory_binary(profile, state)
     analyze = resolve_ghidra_analyze(ghidra)
     script_dir = ROOT / "scripts" / "ghidra"
+    analysis_receipt: dict[str, Any] | None = None
+    inventory_export: dict[str, Any] | None = None
     if analyze and analyze.exists() and (script_dir / "ExportFunctionInventory.java").exists():
-        project = profile.unpack_dir / "ghidra-project"
-        project.mkdir(parents=True, exist_ok=True)
-        cmd = [
-            str(analyze),
-            str(project),
-            profile.slug,
-            "-import",
-            str(binary),
-            "-scriptPath",
-            str(script_dir),
-            "-deleteProject",
-            "-postScript",
-            "ExportFunctionInventory.java",
-            str(jsonl),
-        ]
-        subprocess.run(cmd, cwd=ROOT, check=False)
+        shared_project = shared_project_root(profile.unpack_dir)
+        analysis_receipt = ensure_analyzed_program(
+            binary,
+            project_path=shared_project,
+            analyze_headless=analyze,
+            script_dir=script_dir,
+            cwd=ROOT,
+        )
+        inventory_export = export_function_inventory(
+            receipt=analysis_receipt,
+            inventory_jsonl=jsonl,
+            analyze_headless=analyze,
+            script_dir=script_dir,
+            cwd=ROOT,
+        )
     if not jsonl.exists():
         raise RuntimeError(
             f"inventory missing at {jsonl}; set GHIDRA_INSTALL_DIR or provide function-inventory.jsonl"
         )
-    section_counts = _inventory_section_counts(jsonl)
+    section_counts = validate_inventory_text_coverage(
+        jsonl,
+        text_section,
+        section_counter=_inventory_section_counts,
+    )
     text_count = int(section_counts.get(text_section) or 0)
-    if text_section.startswith(".text") and text_count == 0 and any(bool(name) for name in section_counts):
-        raise RuntimeError(
-            f"inventory at {jsonl} has no functions in {text_section}; "
-            "refusing to continue with a packed/stub-only function map"
-        )
     mark_stage(
         state,
         "inventory",
@@ -618,6 +622,12 @@ def stage_inventory(profile: ProfileConfig, state: dict[str, Any], refresh: bool
         textSection=text_section,
         textSectionFunctionCount=text_count,
         sectionCounts=section_counts,
+        ghidraProjectPath=(analysis_receipt or {}).get("projectPath"),
+        ghidraProjectName=(analysis_receipt or {}).get("projectName"),
+        ghidraProgramName=(analysis_receipt or {}).get("programName"),
+        ghidraAnalysisReceipt=(analysis_receipt or {}).get("receiptPath"),
+        ghidraAnalysisReused=(analysis_receipt or {}).get("reused"),
+        ghidraInventoryExportCommand=(inventory_export or {}).get("exportCommand"),
     )
 
 def stage_match_trivial(
