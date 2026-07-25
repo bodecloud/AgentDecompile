@@ -36,11 +36,13 @@ def project_decompiled_files_to_facts(
     decompiled_files: list[str | Path],
     *,
     out_jsonl: Path,
+    target_sha: str = "",
 ) -> dict[str, Any]:
     """Write function-facts JSONL rows with embedded decompiled text for dump."""
 
     out_jsonl.parent.mkdir(parents=True, exist_ok=True)
     written = 0
+    digest = str(target_sha or "").strip()
     with out_jsonl.open("w", encoding="utf-8") as fh:
         for raw in decompiled_files:
             path = Path(raw)
@@ -52,7 +54,7 @@ def project_decompiled_files_to_facts(
             entry, name = entry_and_name_from_decomp_path(path)
             if not entry:
                 continue
-            row = {
+            row: dict[str, Any] = {
                 "schema": "agentdecompile.function-fact.v1",
                 "name": name,
                 "entry": entry,
@@ -63,6 +65,9 @@ def project_decompiled_files_to_facts(
                 "tool": "ghidrecomp-batch-decompile",
                 "sourcePath": str(path),
             }
+            if digest:
+                row["analysisBinarySha256"] = digest
+                row["targetSha256"] = digest
             fh.write(json.dumps(row, sort_keys=True) + "\n")
             written += 1
 
@@ -71,5 +76,6 @@ def project_decompiled_files_to_facts(
         "status": "complete",
         "factsJsonl": str(out_jsonl),
         "written": written,
+        "analysisBinarySha256": digest or None,
         "claimBoundary": "advisory decompilation facts only; objdiff 0 still required for verified/",
     }

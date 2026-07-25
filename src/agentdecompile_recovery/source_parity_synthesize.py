@@ -22478,6 +22478,10 @@ def main(argv: list[str] | None = None) -> int:
             for record in records:
                 record["strategyClass"] = strategy_by_name.get(str(row.get("name")))
                 record["nearestMatchedExamples"] = retrieval_by_name.get(str(row.get("name")), [])[:3]
+                # Stamp the analysis-image digest so accepted records ingest into the
+                # match cache under the same target-sha key used for lookups.
+                if getattr(args, "target_sha", "") and not record.get("targetSha256"):
+                    record["targetSha256"] = str(args.target_sha)
                 append_jsonl(attempts_path, record)
                 update_promotion_stats(promotion_stats, record)
                 quality = str(record.get("sourceQuality") or "unknown")

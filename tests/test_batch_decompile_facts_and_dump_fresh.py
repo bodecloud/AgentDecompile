@@ -27,11 +27,15 @@ def test_project_decompiled_files_to_facts(tmp_path: Path) -> None:
     decomp = tmp_path / "FUN_00401000.c"
     decomp.write_text("int FUN_00401000(void) { return 1; }\n", encoding="utf-8")
     out = tmp_path / "facts.jsonl"
-    receipt = project_decompiled_files_to_facts([decomp], out_jsonl=out)
+    receipt = project_decompiled_files_to_facts(
+        [decomp], out_jsonl=out, target_sha="deadbeef"
+    )
     assert receipt["written"] == 1
     row = json.loads(out.read_text(encoding="utf-8").splitlines()[0])
     assert row["entry"] == "00401000"
     assert "return 1" in row["decompiled"]
+    assert row["targetSha256"] == "deadbeef"
+    assert row["analysisBinarySha256"] == "deadbeef"
 
 
 def test_parse_dump_layers_defaults() -> None:
@@ -134,3 +138,101 @@ def test_stage_timings_schema(tmp_path: Path) -> None:
     data = json.loads(path.read_text(encoding="utf-8"))
     assert data["schema"] == "agentdecompile.stage-timings.v1"
     assert data["stages"]["inventory"]["wallSeconds"] == 1.5
+
+
+def test_fresh_dump_rejects_stale_work_dir_summary(tmp_path: Path) -> None:
+    work = tmp_path / "work"
+    (work / "source-synthesis").mkdir(parents=True)
+    (work / "state.json").write_text(
+        json.dumps(
+            {
+                "binarySha256": "aaa",
+                "stages": {
+                    "prepare": {"status": "complete", "analysisBinarySha256": "aaa"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    stale = work / "source-synthesis" / "accepted.jsonl"
+    stale.write_text(
+        json.dumps(
+            {
+                "name": "Stale",
+                "entry": "00401000",
+                "status": "matched",
+                "differences": 0,
+                "sourceText": "int Stale(void){return 0;}\n",
+                "sourceQuality": "high-level-c",
+                "targetSha256": "bbb",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / "dump"
+    args = SimpleNamespace(
+        dump_source=out,
+        dump_source_only=False,
+        dump_allow_leftovers=False,
+        dump_layers="verified,port",
+        ghidra_facts=None,
+        input=Path("binary.exe"),
+        json=True,
+    )
+    rc = run_dump_source(args, work)
+    assert rc == 0
+    receipt = json.loads((work / "dump-source.json").read_text(encoding="utf-8"))
+    assert receipt["freshMode"] is True
+    assert receipt["analysisBinarySha256"] == "aaa"
+    assert receipt["summaries"] == []
+    assert (work / "stage-timings.json").is_file()
+    timings = json.loads((work / "stage-timings.json").read_text(encoding="utf-8"))
+    assert "dump-source" in timings["stages"]
+
+
+def test_fresh_dump_keeps_digest_matched_summary(tmp_path: Path) -> None:
+    work = tmp_path / "work"
+    (work / "source-synthesis").mkdir(parents=True)
+    (work / "state.json").write_text(
+        json.dumps(
+            {
+                "binarySha256": "aaa",
+                "stages": {
+                    "prepare": {"status": "complete", "analysisBinarySha256": "aaa"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    matched = work / "source-synthesis" / "accepted.jsonl"
+    matched.write_text(
+        json.dumps(
+            {
+                "name": "Ok",
+                "entry": "00401000",
+                "status": "matched",
+                "differences": 0,
+                "sourceText": "int Ok(void){return 1;}\n",
+                "sourceQuality": "high-level-c",
+                "targetSha256": "aaa",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    out = tmp_path / "dump"
+    args = SimpleNamespace(
+        dump_source=out,
+        dump_source_only=False,
+        dump_allow_leftovers=False,
+        dump_layers="verified,port",
+        ghidra_facts=None,
+        input=Path("binary.exe"),
+        json=True,
+    )
+    rc = run_dump_source(args, work)
+    assert rc == 0
+    receipt = json.loads((work / "dump-source.json").read_text(encoding="utf-8"))
+    assert str(matched) in receipt["summaries"]
+    assert list((out / "verified").glob("*.c"))

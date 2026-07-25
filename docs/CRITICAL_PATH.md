@@ -1,12 +1,13 @@
 # PE critical path (Phase 5b)
 
-Hard packed PE targets (swkotor-class) use a **bounded checkpoint loop** inside `agentdecompile-reconstruct`. There is no separate `acquire` or `vacuum` CLI — use reconstruct flags instead.
+Packed Windows PE targets (swkotor-class) use a **bounded checkpoint loop** inside `agentdecompile-reconstruct`. There is no separate `acquire` or `vacuum` CLI — use reconstruct flags instead.
 
-Run recovery from **AgentDecompile only**. Mizuchi is archived/read-only: [MIZUCHI_ARCHIVE.md](MIZUCHI_ARCHIVE.md).
+Run recovery from **AgentDecompile only**. Mizuchi is archived: [MIZUCHI_ARCHIVE.md](MIZUCHI_ARCHIVE.md).
 
 ## Pipeline
 
 ```mermaid
+
 flowchart LR
   A[prepare-analysis-image] --> B[inventory-binary]
   B --> C[discover-functions]
@@ -14,11 +15,14 @@ flowchart LR
   D --> E[synthesize-source-tasks]
 ```
 
+
 These five names are the only valid `--stop-after` values. After checkpoints you can run autonomous repair with:
 
 ```bash
+
 uv run agentdecompile-reconstruct <target> --work-dir <dir> --autonomous --autonomous-max-functions 1
 ```
+
 
 That is not a `--stop-after` stage and there is no standalone `vacuum` command.
 
@@ -41,6 +45,7 @@ Example binary on the reference host:
 `/run/media/brunner56/MyBook/SteamLibrary/steamapps/common/swkotor/swkotor.exe`
 
 ```bash
+
 SWKOTOR=/run/media/brunner56/MyBook/SteamLibrary/steamapps/common/swkotor/swkotor.exe
 WORK=target/agentdecompile-reconstruct/swkotor-dump-fastpath
 
@@ -80,6 +85,7 @@ uv run agentdecompile-reconstruct "$SWKOTOR" \
   --force-rematch
 ```
 
+
 `--vc-root` and `--source-synthesis-wineprefix` apply when `--source-synthesis msvc` (default mode is `clang`). Dump-only runs do not need them.
 
 ### What the dump reads
@@ -90,12 +96,17 @@ uv run agentdecompile-reconstruct "$SWKOTOR" \
 
 1. `<work-dir>/source-synthesis/{accepted,code-slice-matches,source-shape-matches}.jsonl`
 2. `<work-dir>/swkotor-*-matches/summary.jsonl` (only if this run wrote them under work-dir)
-3. Paths listed in `<work-dir>/export-summaries.txt` (one absolute `.jsonl` per line)
-4. Facts only from work-dir (`source-generation/`, `acquisition/`, `facts/`) or explicit `--ghidra-facts`
+3. Paths listed in `<work-dir>/export-summaries.txt` (one absolute `.jsonl` per line) — always accepted
+4. Facts only from work-dir (`source-generation/`, `acquisition/`, `facts/`, `batch-decompile/`) or explicit `--ghidra-facts`
+
+When `state.json` (or `analysis-target.json`) carries an `analysisBinarySha256`, auto-discovered summaries/facts must include a matching `targetSha256` / `analysisBinarySha256` on at least one row. Unmarked or mismatched leftovers are skipped. Use `--dump-allow-leftovers`, explicit `--ghidra-facts`, or `export-summaries.txt` to opt in.
+
+Wall times for pipeline stages and `dump-source` share `<work-dir>/stage-timings.json`.
 
 **Operator leftovers** (`--dump-allow-leftovers` or `--dump-source-only`):
 
 - Also auto-load `target/swkotor-*-matches/summary.jsonl` siblings and `target/swkotor-ghidra-merged-decomp.jsonl`
+- Digest gating is disabled
 
 Match rows should include `sourceText` and `sourceSha256`. The dump prefers embedded text so it does not open hundreds of `candidate.c` files. Path-only rows still parse for compatibility.
 
@@ -106,6 +117,7 @@ Do not rely on Mizuchi paths. Copy receipts into the locations above or list the
 ### Dump layout
 
 ```text
+
 target/swkotor-source-dump/
   README.md
   MANIFEST.json
@@ -115,6 +127,7 @@ target/swkotor-source-dump/
   verified/code-slice/   # slice proofs (still verified, not advisory)
   advisory/ghidra/       # Ghidra decomp — not proof
 ```
+
 
 **Reading order**
 

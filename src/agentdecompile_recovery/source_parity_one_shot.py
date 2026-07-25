@@ -21,7 +21,7 @@ from .ghidra_analysis import (
     validate_inventory_text_coverage,
 )
 from .source_export import collect_vacuum_prompt_matches, count_vacuum_matched_prompts
-from .stage_timings import empty_timings, record_stage, write_stage_timings
+from .stage_timings import load_stage_timings, record_stage, write_stage_timings
 from .state import atomic_write_json, read_json
 from .targets import is_pe_binary, resolve_target, sha256_file
 
@@ -674,6 +674,7 @@ def stage_batch_decompile(
     projection = project_decompiled_files_to_facts(
         list(payload.get("decompiledFiles") or []),
         out_jsonl=facts_path,
+        target_sha=analysis_digest,
     )
     mark_stage(
         state,
@@ -1112,6 +1113,9 @@ def stage_synthesize(
     ]
     if incremental:
         args.extend(["--offset", str(prior_limit)])
+    target_sha = _analysis_target_sha(state)
+    if target_sha:
+        args.extend(["--target-sha", target_sha])
     args.extend(["--max-variants-per-function", str(max_variants_per_function)])
     args.extend(["--max-attempts-per-function", str(max_attempts_per_function)])
     args.extend(["--max-attempts-per-function-policy", max_attempts_per_function_policy])
@@ -1316,6 +1320,7 @@ def run_pipeline(
     no_compile: bool = False,
     force_rematch: bool = False,
     workers: int = 0,
+    decompile_thread_count: int | None = None,
 ) -> dict[str, Any]:
     _register_runners()
     slug = profile_slug or detect_profile(input_path)
@@ -1355,9 +1360,9 @@ def run_pipeline(
         "force_rematch": force_rematch,
         "workers": workers,
         "force_export_downstream": False,
-        "decompile_thread_count": None,
+        "decompile_thread_count": decompile_thread_count,
     }
-    timings = empty_timings(profile.state_dir)
+    timings = load_stage_timings(profile.state_dir)
     stop_idx = stage_index(stop_after) if stop_after else len(STAGES) - 1
     for idx, name in enumerate(STAGES):
         if idx > stop_idx:
@@ -1578,6 +1583,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--self-check", action="store_true")
     parser.add_argument("--workers", type=int, default=0, help="Parallel Wine/MSVC workers (0 = auto).")
     parser.add_argument(
+        "--decompile-threads",
+        type=int,
+        default=None,
+        help="ghidrecomp batch-decompile worker threads (default: min(cpu, 16), at least 2).",
+    )
+    parser.add_argument(
         "--force-rematch",
         action="store_true",
         help="Rematch proven objdiff-0 functions; default skips via match cache.",
@@ -1621,6 +1632,7 @@ def main(argv: list[str] | None = None) -> int:
             no_compile=args.no_compile,
             force_rematch=args.force_rematch,
             workers=args.workers,
+            decompile_thread_count=args.decompile_threads,
         )
     except Exception as exc:
         print(f"source-parity-one-shot failed: {exc}", file=sys.stderr)
