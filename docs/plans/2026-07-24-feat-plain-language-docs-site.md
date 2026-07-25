@@ -1,6 +1,6 @@
 ---
 title: "feat: Plain-language docs landing page"
-status: active
+status: completed
 date: 2026-07-24
 execution: code
 ---

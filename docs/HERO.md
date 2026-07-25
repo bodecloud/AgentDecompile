@@ -1,6 +1,6 @@
 # AgentDecompile — hero copy
 
-Plain-language intro used on the GitHub Pages site and at the top of [README.md](../README.md).
+Plain-language intro used on the [GitHub Pages site](https://bodecloud.github.io/AgentDecompile/) and at the top of [README.md](../README.md).
 
 ## Headline
 
@@ -24,6 +24,6 @@ Binaries and messy reverse-engineering notes in; rebuildable source out, verifie
 
 | Surface | Path |
 |---------|------|
-| GitHub Pages landing | [docs/index.html](./index.html) |
+| GitHub Pages landing | [bodecloud.github.io/AgentDecompile](https://bodecloud.github.io/AgentDecompile/) |
 | Repository README | [../README.md](../README.md) |
 | Web UI hero | [../src/agentdecompile_cli/webui_assets/index.html](../src/agentdecompile_cli/webui_assets/index.html) |

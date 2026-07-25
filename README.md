@@ -6,7 +6,7 @@ Run an MCP server that talks to your Ghidra project. List functions, decompile c
 
 AgentDecompile exposes live Ghidra state through the open [Model Context Protocol (MCP)](https://modelcontextprotocol.io), so agents work from functions, references, memory, and decompilation instead of guessing from filenames.
 
-[Quick start](#installation) · [Usage guide](USAGE.md) · [Tool list](TOOLS_LIST.md) · [Docs landing page](docs/index.html)
+[Quick start](#installation) · [Usage guide](USAGE.md) · [Tool list](TOOLS_LIST.md) · [Docs site](https://bodecloud.github.io/AgentDecompile/)
 
 ```mermaid
 flowchart TD
@@ -764,16 +764,16 @@ On Windows use forward slashes or escaped backslashes in paths.
 
 ### API and tools (overview)
 
-AgentDecompile exposes 67 canonical MCP tools (see `src/agentdecompile_cli/registry.py`) and 3 resources:
+AgentDecompile exposes 70 canonical MCP tools (see `src/agentdecompile_cli/registry.py`) and 3 resources:
 
-- **63 tools** are advertised by default: every non-GUI canonical tool.
+- **66 tools** are advertised by default: every non-GUI canonical tool.
 - Compatibility aliases remain callable but are hidden by default. Use `AGENT_DECOMPILE_TOOL_SURFACE=curated` for the smaller curated surface.
 - Canonical MCP tool names use **kebab-case** (for example `open`, `get-current-program`, `search-symbols`). JSON argument keys use camelCase (for example `programPath`, `serverHost`). Many CLI-generated subcommands expose `--snake_case` options and some hand-written commands also accept hyphenated aliases.
 
 - Resources: `ghidra://programs`, `ghidra://static-analysis-results`, `ghidra://agentdecompile-debug-info`
 - Representative tools: `open`, `import-binary`, `list-functions`, `decompile-function`, `get-current-program`, `get-references`, `search-symbols`, `inspect-memory`, `manage-function-tags`, `get-call-graph`, `remove-program-binary`, `resolve-modification-conflict` (when a modifying tool reports a conflict)
 
-Live local server contract note: the default advertised surface is currently 63 tools. Compatibility aliases remain callable through raw MCP/CLI routes, and the `switch-project` alias still resolves to `open` even though it is not advertised.
+Live local server contract note: the default advertised surface is currently 66 tools. Compatibility aliases remain callable through raw MCP/CLI routes, and the `switch-project` alias still resolves to `open` even though it is not advertised.
 
 Use `agentdecompile-cli tool --list-tools` to view the live advertised set from your running server, `agentdecompile-cli alias <tool-name>` to inspect compatibility mappings, and [TOOLS_LIST.md](TOOLS_LIST.md) for the maintained reference.
 
