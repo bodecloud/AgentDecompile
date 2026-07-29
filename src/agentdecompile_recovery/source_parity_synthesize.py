@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
-from .package_verify import compile_with_msvc
+from .package_verify import build_shim, compile_with_msvc
 
 ROOT = Path.cwd()
 DEFAULT_VC_ROOT: Path | None = None
@@ -19104,12 +19104,16 @@ def packaged_source_candidate(row: dict[str, Any]) -> GeneratedCandidate | None:
         return None
     automatic_generator = row.get("automaticGenerator") if isinstance(row.get("automaticGenerator"), dict) else {}
     c_name = infer_packaged_c_name(row, source)
+    # Packaged .c sources are raw decompiler output (e.g. Ghidra's undefined4/code/byte
+    # pseudo-types) with no typedefs of their own; without the shim MSVC/clang fail to
+    # even parse the file, so nothing downstream ever reaches objdiff.
+    compile_source = build_shim(source) + "\n\n" + source if suffix == ".c" else source
     return GeneratedCandidate(
         rule=str(automatic_generator.get("rule") or "packaged-source"),
         variant="packaged-source",
         c_name=c_name,
         symbol=infer_packaged_symbol(row, source, c_name, suffix),
-        source=source,
+        source=compile_source,
         callconv=infer_packaged_callconv(source, suffix),
         return_type="unknown",
         extra_flags=tuple(),
