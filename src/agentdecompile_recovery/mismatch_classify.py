@@ -45,7 +45,20 @@ def classify_mismatch(
     detail_level: str | None = None,
     fallback: str | None = None,
 ) -> dict[str, Any]:
-    """Assign a primary mismatch class from histogram and boundary context."""
+    """Assign a primary mismatch class from histogram and boundary context.
+
+    A coherent instruction-level histogram is direct evidence the target
+    slice compiled to something comparable, which outranks the
+    boundary-suspect heuristic (a static guess about the slice's extent
+    that has no false-negative signal to weigh against it). boundary-suspect
+    is only the fallback classification when there's no usable histogram to
+    classify from -- e.g. a compile failure, or an objdiff report that never
+    reached instruction-level detail.
+    """
+
+    classification = _classify_from_histogram(histogram, detail_level=detail_level, fallback=fallback)
+    if classification["mismatchClass"] != CLASS_UNCLASSIFIED:
+        return classification
 
     boundary = boundary_quality if isinstance(boundary_quality, dict) else {}
     if boundary.get("status") == "suspect":
@@ -55,7 +68,15 @@ def classify_mismatch(
             histogram=histogram or {},
             detail_level=detail_level,
         )
+    return classification
 
+
+def _classify_from_histogram(
+    histogram: dict[str, int] | None,
+    *,
+    detail_level: str | None,
+    fallback: str | None,
+) -> dict[str, Any]:
     if fallback or detail_level == "scalar-only" or not histogram:
         return _classification(CLASS_UNCLASSIFIED, primary_kind=None, histogram={}, detail_level=detail_level)
 

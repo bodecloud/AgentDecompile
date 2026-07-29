@@ -28,14 +28,45 @@ def test_operand_dominance() -> None:
     assert result["primaryMismatchKind"] == "ARGUMENT_MISMATCH"
 
 
-def test_boundary_suspect_preempts_histogram() -> None:
+def test_usable_histogram_outranks_boundary_suspect() -> None:
+    """A coherent instruction-level histogram is direct evidence the slice
+    compiled to something comparable, so it outranks the boundary-suspect
+    heuristic -- otherwise real near-misses on non-PE-export functions (the
+    common case for internal sub_* functions) never reach shape-search."""
     result = classify_mismatch(
         histogram={"ARGUMENT_MISMATCH": 3},
         boundary_quality={"status": "suspect"},
         detail_level="instruction",
     )
 
+    assert result["mismatchClass"] == CLASS_OPERAND
+
+
+def test_boundary_suspect_is_fallback_without_usable_histogram() -> None:
+    """boundary-suspect still fires when there's no histogram evidence to
+    classify from (e.g. compile failure, or an objdiff report that never
+    reached instruction-level detail)."""
+    result = classify_mismatch(
+        histogram=None,
+        boundary_quality={"status": "suspect"},
+        detail_level="scalar-only",
+    )
+
     assert result["mismatchClass"] == CLASS_BOUNDARY_SUSPECT
+
+    result = classify_mismatch(
+        histogram={},
+        boundary_quality={"status": "suspect"},
+        detail_level="instruction",
+    )
+
+    assert result["mismatchClass"] == CLASS_BOUNDARY_SUSPECT
+
+
+def test_boundary_not_suspect_and_no_histogram_is_unclassified() -> None:
+    result = classify_mismatch(histogram=None, boundary_quality={"status": "plausible"})
+
+    assert result["mismatchClass"] == CLASS_UNCLASSIFIED
 
 
 def test_insert_delete_equal_counts() -> None:
