@@ -28,10 +28,14 @@ near-miss stdcall population found in the same sweep.
 
 from __future__ import annotations
 
+import pytest
+
 from agentdecompile_recovery.source_parity_synthesize import (
     infer_packaged_symbol,
     packaged_stack_bytes,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_packaged_stack_bytes_counts_stdcall_params_from_source_when_no_metadata() -> None:

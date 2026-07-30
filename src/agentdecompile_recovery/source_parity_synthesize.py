@@ -19121,6 +19121,24 @@ def generate(row: dict[str, Any], max_variants: int) -> list[GeneratedCandidate]
 _CALLEE_CALL_RE = re.compile(r"\b(sub_[0-9a-fA-F]+|FUN_[0-9a-fA-F]+)\s*\(")
 
 
+def _infer_callee_return_type(callee_source: str, callee_name: str) -> str:
+    # Falls back to "int" (not "void") when unparseable: an implicit
+    # pre-C99 declaration defaults to int, and a caller that ignores the
+    # return value still compiles fine against an "int" prototype -- unlike
+    # "void", which is a hard compile error for any caller that consumes it
+    # (e.g. the common Ghidra pattern `iVar1 = calleeName(...)`).
+    match = re.search(rf"(^|\n)([A-Za-z_][A-Za-z0-9_ \*]*?)\s+{re.escape(callee_name)}\s*\(", callee_source)
+    if not match:
+        return "int"
+    # The captured group spans everything before the name, which includes
+    # any calling-convention keyword (e.g. "undefined4 __stdcall") since the
+    # regex must expand past it to reach the required whitespace+name
+    # boundary -- strip those keywords back out, since the prototype already
+    # adds the calling-convention keyword explicitly.
+    rettype = re.sub(r"\b(__stdcall|__fastcall|__cdecl)\b", "", match.group(2)).strip()
+    return rettype or "int"
+
+
 def infer_callee_prototype(callee_name: str, source_generation_root: Path) -> str | None:
     """Infer a calling-convention-correct extern prototype for a callee by
     reusing its own packaged-source candidate (a sibling directory under the
@@ -19144,10 +19162,18 @@ def infer_callee_prototype(callee_name: str, source_generation_root: Path) -> st
     stack_bytes = packaged_stack_bytes({"name": callee_name}, callee_name, source=callee_source)
     if stack_bytes is None or stack_bytes % 4 != 0:
         return None
+    sig_match = re.search(rf"\b{re.escape(callee_name)}\s*\(([^)]*)\)", callee_source)
+    if sig_match and _EIGHT_BYTE_PARAM_TYPE_RE.search(sig_match.group(1)):
+        # packaged_stack_bytes only tracks total byte count, not individual
+        # param widths -- an 8-byte param would make stack_bytes // 4 emit
+        # the wrong number of (all 4-byte) params, an arity mismatch against
+        # the real call site. Bail rather than emit a wrong-arity prototype.
+        return None
     param_count = stack_bytes // 4
     params = ", ".join(["unsigned int"] * param_count) if param_count else "void"
     keyword = "__stdcall" if callconv == "stdcall" else "__fastcall"
-    return f"extern void {keyword} {callee_name}({params});"
+    return_type = _infer_callee_return_type(callee_source, callee_name)
+    return f"extern {return_type} {keyword} {callee_name}({params});"
 
 
 def infer_callee_prototypes(source: str, self_name: str, source_generation_root: Path) -> str:
@@ -19175,6 +19201,7 @@ def packaged_source_candidate(row: dict[str, Any]) -> GeneratedCandidate | None:
     # Packaged .c sources are raw decompiler output (e.g. Ghidra's undefined4/code/byte
     # pseudo-types) with no typedefs of their own; without the shim MSVC/clang fail to
     # even parse the file, so nothing downstream ever reaches objdiff.
+    callee_prototypes = ""
     if suffix == ".c":
         callee_prototypes = infer_callee_prototypes(source, c_name, source_path.parent.parent)
         compile_source = build_shim(source) + (f"\n{callee_prototypes}\n" if callee_prototypes else "") + "\n" + source
@@ -19196,6 +19223,7 @@ def packaged_source_candidate(row: dict[str, Any]) -> GeneratedCandidate | None:
             "packagedSource": str(source_path),
             "packagedSourceSha256": hashlib.sha256(source.encode("utf-8")).hexdigest(),
             "sourceOrigin": row.get("sourceOrigin"),
+            "calleePrototypesInferred": callee_prototypes.splitlines(),
         },
         source_suffix=suffix,
         semantic_source=row.get("semanticSource") is not False,
