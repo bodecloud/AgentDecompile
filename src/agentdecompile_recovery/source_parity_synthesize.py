@@ -573,6 +573,15 @@ def inc_abs_global(row: dict[str, Any], c_name: str, data: bytes) -> list[Genera
     if len(data) != 7 or data[0] != 0xFF or data[1] != 0x05 or data[-1] != 0xC3:
         return []
     addr = u32(data[2:6])
+    global_symbol = f"_DAT_{addr:08x}"
+    absolute_address_relocations = [
+        {
+            "offset": 2,
+            "type": "IMAGE_REL_I386_DIR32",
+            "symbol": global_symbol,
+            "decodedAddress": f"0x{addr:08x}",
+        }
+    ]
     plain_source = header("inc-absolute-global", row) + "\n".join(
         [
             f"void {c_name}(void) {{",
@@ -598,7 +607,10 @@ def inc_abs_global(row: dict[str, Any], c_name: str, data: bytes) -> list[Genera
             source=plain_source,
             callconv="cdecl",
             return_type="void",
-            evidence={"absoluteAddress": f"0x{addr:08x}"},
+            evidence={
+                "absoluteAddress": f"0x{addr:08x}",
+                "absoluteAddressRelocations": absolute_address_relocations,
+            },
         ),
         GeneratedCandidate(
             rule="inc-absolute-global",
@@ -608,8 +620,41 @@ def inc_abs_global(row: dict[str, Any], c_name: str, data: bytes) -> list[Genera
             source=volatile_source,
             callconv="cdecl",
             return_type="void",
-            evidence={"absoluteAddress": f"0x{addr:08x}"},
+            evidence={
+                "absoluteAddress": f"0x{addr:08x}",
+                "absoluteAddressRelocations": absolute_address_relocations,
+            },
         )
+    ]
+
+
+def single_absolute_address_relocation(offset: int, addr: int) -> list[dict[str, Any]]:
+    """Return the absoluteAddressRelocations shape for one absolute-address reference.
+
+    Matches the target-side reconstruction absolute_address_relocations() reads
+    (render_target_coff_for_candidate) -- without this, the synthetic target
+    object renders the address as a raw byte blob instead of a symbol
+    relocation, and a candidate referencing the same global through a
+    compiler-visible symbol can never byte-match it.
+
+    Do NOT call this for a candidate whose generated source only references
+    the address via a literal pointer cast (e.g. `*(unsigned int *)0x...`) --
+    MSVC compiles a literal cast as a bare immediate with no relocation, so
+    there is nothing on the candidate side for this evidence to mirror.
+    Confirmed via real MSVC8/wine + objdiff A/B testing to make matching
+    measurably worse for literal-cast candidates (see
+    docs/plans/2026-07-30-001-fix-generalize-relocation-evidence-plan.md).
+    Only use this when the generated source references the address through a
+    named extern symbol, as bink_buffer_set_direct_draw_forwarder does.
+    """
+
+    return [
+        {
+            "offset": offset,
+            "type": "IMAGE_REL_I386_DIR32",
+            "symbol": f"_DAT_{addr:08x}",
+            "decodedAddress": f"0x{addr:08x}",
+        }
     ]
 
 
@@ -20447,8 +20492,21 @@ def byte_field_guard_return_self_variants(row: dict[str, Any], candidate: Genera
     ]
 
 
+# Two distinct concerns share this check.
+#
+# Preprocessor/linker directives are a sandbox concern: a rewrite is untrusted
+# text and must not be able to pull in headers or influence linkage.
+#
+# Inline assembly, naked functions, and byte emission are a *deliverable*
+# concern: they reproduce the target bytes exactly, so they pass the objdiff
+# gate while destroying the readable-C output the pipeline exists to produce.
+# An unconstrained rewrite lane converges on them immediately -- the only
+# completed mechanism-3 result before this clause existed was
+# `__asm { inc dword ptr [DAT_00830540] }`. Word boundaries keep ordinary
+# identifiers that merely contain these letters (plasmaCount) from matching.
 _REWRITE_CONTENT_DISALLOWED_RE = re.compile(
-    r"^\s*#\s*(pragma|include|import|define|undef|ifdef|ifndef|if|elif|else|endif|error|line)\b|_Pragma\s*\(",
+    r"^\s*#\s*(pragma|include|import|define|undef|ifdef|ifndef|if|elif|else|endif|error|line)\b|_Pragma\s*\("
+    r"|\b__asm\b|\b_asm\b|\basm\s*\(|__declspec\s*\(\s*naked|\b__emit\b|\.incbin\b",
     re.MULTILINE,
 )
 _REWRITE_LINE_CONTINUATION_RE = re.compile(r"\\\r?\n")
