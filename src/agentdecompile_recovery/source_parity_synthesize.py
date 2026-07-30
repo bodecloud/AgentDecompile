@@ -52,6 +52,27 @@ DEFAULT_PROFILES: list[tuple[str, list[str]]] = [
     ("Od_Oyminus_GSminus", ["/Od", "/Oy-", "/GS-"]),
 ]
 
+# Broader MSVC flag-combination search used only when source_shape_search is
+# requested and no row hint/explicit profile pins the search: packaged-source
+# candidates (raw decompiler output, no alternate C idiom available) have no
+# other lever for matching the original compiler's exact codegen shape --
+# inlining, frame-pointer omission, and intrinsics decisions are flag-driven,
+# not source-driven, for many near-miss mismatches (e.g. branch vs branchless
+# mask-arithmetic codegen). Superset of DEFAULT_PROFILES; the attempt loop
+# breaks on first code-slice match, so the extra entries only cost compiles
+# when the default 4 profiles all miss.
+EXTENDED_PROFILES: list[tuple[str, list[str]]] = [
+    *DEFAULT_PROFILES,
+    ("O2_Gz_Oy_Ob1_GSminus", ["/O2", "/Gz", "/Oy", "/Ob1", "/GS-"]),
+    ("O2_Gz_Oy_Ob2_GSminus", ["/O2", "/Gz", "/Oy", "/Ob2", "/GS-"]),
+    ("O2_Gd_Oy_GSminus", ["/O2", "/Gd", "/Oy", "/GS-"]),
+    ("O1_Oy_GSminus", ["/O1", "/Oy", "/GS-"]),
+    ("O2_Gz_Oyminus_GSminus", ["/O2", "/Gz", "/Oy-", "/GS-"]),
+    ("Ox_Gz_Oy_GSminus", ["/Ox", "/Gz", "/Oy", "/GS-"]),
+    ("O2_Gz_Oy_Oi_GSminus", ["/O2", "/Gz", "/Oy", "/Oi", "/GS-"]),
+    ("Od_Gz_Oyminus_GSminus", ["/Od", "/Gz", "/Oy-", "/GS-"]),
+]
+
 DEFAULT_CLANG_PROFILES: list[tuple[str, list[str]]] = [
     ("clang_i386_O2", ["-m32", "-O2", "-ffreestanding", "-fno-pic", "-fno-pie", "-fno-asynchronous-unwind-tables", "-fno-stack-protector", "-fno-ident"]),
     ("clang_i386_O0", ["-m32", "-O0", "-ffreestanding", "-fno-pic", "-fno-pie", "-fno-asynchronous-unwind-tables", "-fno-stack-protector", "-fno-ident"]),
@@ -175,13 +196,16 @@ def resolve_profiles(
     row: dict[str, Any],
     cli_profiles: list[tuple[str, list[str]]],
     compiler: str = "msvc",
+    *,
+    source_shape_search: bool = False,
 ) -> list[tuple[str, list[str]]]:
     if cli_profiles:
         return cli_profiles
     hint_args = extract_row_compiler_profile_hints(row, compiler)
     if hint_args:
         profiles = [("row-hint", hint_args)]
-        for name, args in default_profile_set(compiler):
+        base = EXTENDED_PROFILES if (source_shape_search and compiler == "msvc") else default_profile_set(compiler)
+        for name, args in base:
             if args != hint_args:
                 profiles.append((name, args))
         return profiles
@@ -191,6 +215,8 @@ def resolve_profiles(
         return list(DEFAULT_CLANG_CXX_PROFILES)
     if compiler == "clang-cl":
         return DEFAULT_CLANG_CL_PROFILES
+    if source_shape_search:
+        return EXTENDED_PROFILES
     return DEFAULT_PROFILES
 
 
@@ -19667,7 +19693,7 @@ def attempt_candidate_with_msvc_synthetic_slice(
             }
         ]
     attempts: list[dict[str, Any]] = []
-    resolved_profiles = resolve_profiles(row, compiler_profiles, "msvc")
+    resolved_profiles = resolve_profiles(row, compiler_profiles, "msvc", source_shape_search=source_shape_search)
     seen_merged_flags: set[tuple[str, ...]] = set()
     attempt_timeout = min(timeout, 30)
     for profile_index, (profile_name, profile_args) in enumerate(resolved_profiles):
