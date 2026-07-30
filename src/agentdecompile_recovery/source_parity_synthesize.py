@@ -704,10 +704,7 @@ def float_multiply_global(row: dict[str, Any], c_name: str, data: bytes) -> list
             source=source,
             callconv="cdecl",
             return_type="float",
-            evidence={
-                "absoluteAddress": f"0x{addr:08x}",
-                "absoluteAddressRelocations": single_absolute_address_relocation(6, addr),
-            },
+            evidence={"absoluteAddress": f"0x{addr:08x}"},
         )
     ]
 
@@ -761,10 +758,7 @@ def import_call_self_stdcall(row: dict[str, Any], c_name: str, data: bytes) -> l
             source=source,
             callconv="fastcall",
             return_type="void",
-            evidence={
-                "callPointerAddress": f"0x{addr:08x}",
-                "absoluteAddressRelocations": single_absolute_address_relocation(3, addr),
-            },
+            evidence={"callPointerAddress": f"0x{addr:08x}"},
         )
     ]
 
@@ -5305,12 +5299,7 @@ def global_setter_u32_stdcall(row: dict[str, Any], c_name: str, data: bytes) -> 
             source=source,
             callconv="stdcall",
             return_type="void",
-            evidence={
-                "pattern": "mov-eax-stack4-store-abs-ret4",
-                "address": f"0x{address:08x}",
-                "stackBytes": 4,
-                "absoluteAddressRelocations": single_absolute_address_relocation(5, address),
-            },
+            evidence={"pattern": "mov-eax-stack4-store-abs-ret4", "address": f"0x{address:08x}", "stackBytes": 4},
         )
     ]
 
@@ -8692,11 +8681,7 @@ def call_indirect_zero(row: dict[str, Any], c_name: str, data: bytes) -> list[Ge
             source=direct_source,
             callconv="cdecl",
             return_type="void",
-            evidence={
-                "callPointerAddress": f"0x{addr:08x}",
-                "arg0": 0,
-                "absoluteAddressRelocations": single_absolute_address_relocation(4, addr),
-            },
+            evidence={"callPointerAddress": f"0x{addr:08x}", "arg0": 0},
             extra_flags=("/O1",),
         ),
         GeneratedCandidate(
@@ -8707,11 +8692,7 @@ def call_indirect_zero(row: dict[str, Any], c_name: str, data: bytes) -> list[Ge
             source=loaded_source,
             callconv="cdecl",
             return_type="void",
-            evidence={
-                "callPointerAddress": f"0x{addr:08x}",
-                "arg0": 0,
-                "absoluteAddressRelocations": single_absolute_address_relocation(4, addr),
-            },
+            evidence={"callPointerAddress": f"0x{addr:08x}", "arg0": 0},
             extra_flags=("/O1",),
         ),
     ]
@@ -9552,12 +9533,7 @@ def virtual_call_eq_global(row: dict[str, Any], c_name: str, data: bytes) -> lis
             source=source_direct,
             callconv="fastcall",
             return_type="unsigned char",
-            evidence={
-                "vtableSlotBytes": slot_bytes,
-                "vtableSlotIndex": slot_index,
-                "absoluteAddress": f"0x{addr:08x}",
-                "absoluteAddressRelocations": single_absolute_address_relocation(7, addr),
-            },
+            evidence={"vtableSlotBytes": slot_bytes, "vtableSlotIndex": slot_index, "absoluteAddress": f"0x{addr:08x}"},
         ),
         GeneratedCandidate(
             rule="virtual-call-eq-global",
@@ -9567,12 +9543,7 @@ def virtual_call_eq_global(row: dict[str, Any], c_name: str, data: bytes) -> lis
             source=source_char_temp,
             callconv="fastcall",
             return_type="unsigned char",
-            evidence={
-                "vtableSlotBytes": slot_bytes,
-                "vtableSlotIndex": slot_index,
-                "absoluteAddress": f"0x{addr:08x}",
-                "absoluteAddressRelocations": single_absolute_address_relocation(7, addr),
-            },
+            evidence={"vtableSlotBytes": slot_bytes, "vtableSlotIndex": slot_index, "absoluteAddress": f"0x{addr:08x}"},
             extra_flags=("/O1",),
         ),
     ]
@@ -9688,10 +9659,7 @@ def import_call_return_self(row: dict[str, Any], c_name: str, data: bytes) -> li
             source=source,
             callconv="fastcall",
             return_type="void *",
-            evidence={
-                "callPointerAddress": f"0x{addr:08x}",
-                "absoluteAddressRelocations": single_absolute_address_relocation(6, addr),
-            },
+            evidence={"callPointerAddress": f"0x{addr:08x}"},
         )
     ]
 
@@ -9784,10 +9752,7 @@ def global_indexed_store_cdecl(row: dict[str, Any], c_name: str, data: bytes) ->
             source=source,
             callconv="cdecl",
             return_type="void",
-            evidence={
-                "absoluteAddress": f"0x{addr:08x}",
-                "absoluteAddressRelocations": single_absolute_address_relocation(11, addr),
-            },
+            evidence={"absoluteAddress": f"0x{addr:08x}"},
         )
     ]
 
@@ -17209,11 +17174,7 @@ def import_call_arg_return_one_stdcall8(row: dict[str, Any], c_name: str, data: 
             source=source_direct,
             callconv="stdcall",
             return_type="int",
-            evidence={
-                "callPointerAddress": f"0x{addr:08x}",
-                "stackBytes": 8,
-                "absoluteAddressRelocations": single_absolute_address_relocation(6, addr),
-            },
+            evidence={"callPointerAddress": f"0x{addr:08x}", "stackBytes": 8},
         ),
         GeneratedCandidate(
             rule="import-call-arg-return-one-stdcall8",
@@ -17223,11 +17184,7 @@ def import_call_arg_return_one_stdcall8(row: dict[str, Any], c_name: str, data: 
             source=source_inc,
             callconv="stdcall",
             return_type="int",
-            evidence={
-                "callPointerAddress": f"0x{addr:08x}",
-                "stackBytes": 8,
-                "absoluteAddressRelocations": single_absolute_address_relocation(6, addr),
-            },
+            evidence={"callPointerAddress": f"0x{addr:08x}", "stackBytes": 8},
             extra_flags=("/O1",),
         ),
     ]
@@ -17754,12 +17711,7 @@ def global_virtual_call_stack_arg(row: dict[str, Any], c_name: str, data: bytes)
             source=source_value_first,
             callconv="cdecl",
             return_type="void",
-            evidence={
-                "absoluteAddress": f"0x{addr:08x}",
-                "vtableSlotBytes": slot,
-                "vtableSlotIndex": slot_index,
-                "absoluteAddressRelocations": single_absolute_address_relocation(2, addr),
-            },
+            evidence={"absoluteAddress": f"0x{addr:08x}", "vtableSlotBytes": slot, "vtableSlotIndex": slot_index},
         ),
         GeneratedCandidate(
             rule="global-virtual-call-stack-arg",
@@ -17769,13 +17721,7 @@ def global_virtual_call_stack_arg(row: dict[str, Any], c_name: str, data: bytes)
             source=source_obj_first,
             callconv="cdecl",
             return_type="void",
-            evidence={
-                "absoluteAddress": f"0x{addr:08x}",
-                "vtableSlotBytes": slot,
-                "vtableSlotIndex": slot_index,
-                "loadOrder": "object-first",
-                "absoluteAddressRelocations": single_absolute_address_relocation(2, addr),
-            },
+            evidence={"absoluteAddress": f"0x{addr:08x}", "vtableSlotBytes": slot, "vtableSlotIndex": slot_index, "loadOrder": "object-first"},
         ),
     ]
 
@@ -18179,11 +18125,7 @@ def global_field_eq_one_bool(row: dict[str, Any], c_name: str, data: bytes) -> l
             source=source,
             callconv="cdecl",
             return_type="int",
-            evidence={
-                "absoluteAddress": f"0x{addr:08x}",
-                "fieldOffset": offset,
-                "absoluteAddressRelocations": single_absolute_address_relocation(1, addr),
-            },
+            evidence={"absoluteAddress": f"0x{addr:08x}", "fieldOffset": offset},
         )
     ]
 
