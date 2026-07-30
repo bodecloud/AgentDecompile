@@ -100,9 +100,16 @@ def test_legitimate_named_symbol_usage_is_not_flagged() -> None:
     """
 
     candidates = bink_buffer_set_direct_draw_forwarder({}, "FUN_test", BINK_BUFFER_SET_DIRECT_DRAW_FORWARDER)
-    assert len(candidates) >= 1
+    assert len(candidates) == 2
     relocations = candidates[0].evidence.get("absoluteAddressRelocations")
-    assert relocations and len(relocations) >= 1
+    assert relocations == [
+        {"offset": 0x14, "type": "IMAGE_REL_I386_DIR32", "symbol": "_recovery_global_30068c6c", "decodedAddress": "0x30068c6c"},
+        {"offset": 0x19, "type": "IMAGE_REL_I386_DIR32", "symbol": "_recovery_global_30068c70", "decodedAddress": "0x30068c70"},
+        {"offset": 0x1F, "type": "IMAGE_REL_I386_DIR32", "symbol": "_recovery_global_30068c68", "decodedAddress": "0x30068c68"},
+        {"offset": 0x36, "type": "IMAGE_REL_I386_DIR32", "symbol": "_recovery_global_30068c6c", "decodedAddress": "0x30068c6c"},
+        {"offset": 0x3C, "type": "IMAGE_REL_I386_DIR32", "symbol": "_recovery_global_30068c70", "decodedAddress": "0x30068c70"},
+        {"offset": 0x42, "type": "IMAGE_REL_I386_DIR32", "symbol": "_recovery_global_30068c68", "decodedAddress": "0x30068c68"},
+    ]
 
     text = SOURCE_PATH.read_text(encoding="utf-8")
     tree = ast.parse(text)
