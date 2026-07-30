@@ -19221,6 +19221,9 @@ def _count_stack_bytes_from_parameter_list(params_text: str) -> int:
     return total
 
 
+_AUTO_DECOMPILER_NAME_RE = re.compile(r"^(?:sub|FUN)_[0-9a-fA-F]+$")
+
+
 def packaged_stack_bytes(row: dict[str, Any], c_name: str, *, source: str | None = None) -> int | None:
     generator = row.get("automaticGenerator") if isinstance(row.get("automaticGenerator"), dict) else {}
     stack_bytes = optional_int(generator.get("stackBytes"))
@@ -19230,9 +19233,16 @@ def packaged_stack_bytes(row: dict[str, Any], c_name: str, *, source: str | None
     match = re.search(r"@(\d+)$", name)
     if match:
         return int(match.group(1))
-    match = re.search(r"_(\d+)$", c_name)
-    if match:
-        return int(match.group(1))
+    # Skip the "_<digits>" suffix heuristic for Ghidra's default auto-named
+    # functions (sub_<hex>/FUN_<hex>) -- when the address happens to be
+    # composed entirely of decimal digits (no a-f), this would misread the
+    # function's own address as a stack-byte annotation (e.g. sub_11240 ->
+    # wrongly inferred as 11240 stack bytes). The suffix is only meaningful
+    # for deliberately-named helpers (e.g. "helper_16" meaning 16 bytes).
+    if not _AUTO_DECOMPILER_NAME_RE.match(c_name):
+        match = re.search(r"_(\d+)$", c_name)
+        if match:
+            return int(match.group(1))
     if source:
         # No external metadata carries the stack-byte count (common for a
         # plain decompiler-named function like sub_1234 with no @N suffix
