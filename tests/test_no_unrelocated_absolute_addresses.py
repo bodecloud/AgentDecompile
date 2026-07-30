@@ -35,6 +35,8 @@ import ast
 import re
 from pathlib import Path
 
+import pytest
+
 from agentdecompile_recovery.source_parity_synthesize import (
     BINK_BUFFER_SET_DIRECT_DRAW_FORWARDER,
     bink_buffer_set_direct_draw_forwarder,
@@ -120,16 +122,30 @@ def test_legitimate_named_symbol_usage_is_not_flagged() -> None:
     assert LITERAL_CAST_RE.search(body) is None
 
 
-def test_check_actually_detects_the_anti_pattern() -> None:
+_ANTI_PATTERN_SOURCE_LINES = {
+    "dereferenced-cast": '    source = f"*(unsigned int *)0x{addr:08x} = 1;"\n',
+    "indexed-store": '    source = f"((unsigned int *)0x{addr:08x})[index] = value;"\n',
+    "assign-then-deref": (
+        '    source = f"unsigned int *slot = (unsigned int *)0x{addr:08x}; *slot = 1;"\n'
+    ),
+}
+
+
+@pytest.mark.parametrize("source_line", _ANTI_PATTERN_SOURCE_LINES.values(), ids=_ANTI_PATTERN_SOURCE_LINES.keys())
+def test_check_actually_detects_the_anti_pattern(source_line: str) -> None:
     """Regression guard on the check itself: prove it fires on a synthetic
-    function shaped exactly like the mistake this test exists to prevent.
+    function shaped exactly like the mistake this test exists to prevent --
+    covering all three literal-cast idioms LITERAL_CAST_RE was broadened to
+    catch (dereferenced cast, indexed-store, assign-then-deref), not just the
+    first one. Without this, a future narrowing of the regex back to only the
+    first idiom would pass every test in this file silently.
     """
 
     synthetic_source = (
         "def fake_rule(row: dict[str, Any], c_name: str, data: bytes) -> list[GeneratedCandidate]:\n"
         "    addr = u32(data[2:6])\n"
-        '    source = f"*(unsigned int *)0x{addr:08x} = 1;"\n'
-        "    return [GeneratedCandidate(\n"
+        + source_line
+        + "    return [GeneratedCandidate(\n"
         '        rule="fake", variant="fake", c_name=c_name, symbol=c_name,\n'
         "        source=source, callconv=\"cdecl\", return_type=\"void\",\n"
         '        evidence={"absoluteAddressRelocations": [{"offset": 2}]},\n'
