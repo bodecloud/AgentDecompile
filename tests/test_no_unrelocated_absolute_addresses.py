@@ -35,6 +35,11 @@ import ast
 import re
 from pathlib import Path
 
+from agentdecompile_recovery.source_parity_synthesize import (
+    BINK_BUFFER_SET_DIRECT_DRAW_FORWARDER,
+    bink_buffer_set_direct_draw_forwarder,
+)
+
 SOURCE_PATH = Path(__file__).resolve().parent.parent / "src" / "agentdecompile_recovery" / "source_parity_synthesize.py"
 
 # Rules exempt from this check: their own literal-cast candidate is
@@ -42,7 +47,7 @@ SOURCE_PATH = Path(__file__).resolve().parent.parent / "src" / "agentdecompile_r
 # and the evidence exists to serve a different, later-constructed candidate.
 EXEMPT_RULE_FUNCTIONS = {"inc_abs_global"}
 
-LITERAL_CAST_RE = re.compile(r"\*\s*\([^)]*\*\)\s*0x\{[a-zA-Z_]+")
+LITERAL_CAST_RE = re.compile(r"\([^)]*\*\)\s*0x\{[a-zA-Z_]+")
 
 
 def _iter_rule_generator_functions(tree: ast.Module) -> list[ast.FunctionDef]:
@@ -83,6 +88,29 @@ def test_no_rule_generator_pairs_relocation_evidence_with_a_literal_cast() -> No
         "docstring). Either remove the evidence, or change the generated "
         "source to reference the address through a named extern symbol."
     )
+
+
+def test_legitimate_named_symbol_usage_is_not_flagged() -> None:
+    """Positive-path case: bink_buffer_set_direct_draw_forwarder is the one
+    pre-existing rule that genuinely needs absoluteAddressRelocations -- it
+    references its addresses through named extern symbols, not a literal
+    cast. Deliberately targets this function (rather than relying on the
+    whole-file scan's incidental pass) so the check's "allowed pattern"
+    branch has its own coverage, not just the negative case.
+    """
+
+    candidates = bink_buffer_set_direct_draw_forwarder({}, "FUN_test", BINK_BUFFER_SET_DIRECT_DRAW_FORWARDER)
+    assert len(candidates) >= 1
+    relocations = candidates[0].evidence.get("absoluteAddressRelocations")
+    assert relocations and len(relocations) >= 1
+
+    text = SOURCE_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(text)
+    source_lines = text.splitlines()
+    functions = {node.name: node for node in _iter_rule_generator_functions(tree)}
+    body = _function_source(source_lines, functions["bink_buffer_set_direct_draw_forwarder"])
+    assert "absoluteAddressRelocations" in body
+    assert LITERAL_CAST_RE.search(body) is None
 
 
 def test_check_actually_detects_the_anti_pattern() -> None:
