@@ -195,6 +195,19 @@ def _classification(
 
 
 def _dominant_bucket(histogram: dict[str, int], *, total: int | None = None) -> tuple[str | None, int]:
+    """Pick the plurality mismatch kind to route from.
+
+    A strict >50% majority requirement here means any genuinely mixed diff --
+    common for real near-misses with several small differences of different
+    kinds -- falls through to unclassified regardless of how much real
+    instruction-level evidence exists, and from there to boundary-repair or
+    scalar-default, neither of which enables shape search. The routed
+    playbooks for every real class (operand/opcode/insert-delete) all enable
+    shape search; they differ mainly in variant budget and repair lane, so
+    picking the plurality kind (deterministic tie-break: highest count, then
+    alphabetical) is enough signal to route productively without requiring an
+    outright majority.
+    """
     if total is None:
         total = sum(int(value) for value in histogram.values())
     if total <= 0:
@@ -202,12 +215,7 @@ def _dominant_bucket(histogram: dict[str, int], *, total: int | None = None) -> 
     ranked = sorted(((kind, int(count)) for kind, count in histogram.items() if int(count) > 0), key=lambda item: (-item[1], item[0]))
     if not ranked:
         return None, 0
-    top_kind, top_count = ranked[0]
-    if len(ranked) == 1:
-        return top_kind, top_count
-    if top_count * 2 > total:
-        return top_kind, top_count
-    return None, 0
+    return ranked[0]
 
 
 def _class_for_kind(kind: str, histogram: dict[str, int]) -> str:

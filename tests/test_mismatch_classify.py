@@ -104,3 +104,34 @@ def test_empty_histogram_is_unclassified() -> None:
 
 def test_routed_playbook_for_operand() -> None:
     assert routed_playbook_for_class(CLASS_OPERAND) == PLAYBOOK_OPERAND
+
+
+def test_plurality_without_majority_still_routes_to_a_class() -> None:
+    """A genuinely mixed diff (no category crosses 50%) is common for real
+    near-misses -- requiring an outright majority meant these always fell
+    through to unclassified/scalar-default regardless of how much real
+    instruction-level evidence existed. Plurality (highest count) is enough
+    signal to route to shape search; every real class enables it."""
+    result = classify_mismatch(
+        # ARGUMENT_MISMATCH and REPLACEMENT tie at 22 each, out of 70 total --
+        # observed live on swkotor.exe's sub_127b0.
+        histogram={"ARGUMENT_MISMATCH": 22, "DELETION": 16, "INSERTION": 10, "REPLACEMENT": 22},
+        detail_level="instruction",
+    )
+
+    assert result["mismatchClass"] != CLASS_UNCLASSIFIED
+    # Deterministic tie-break: highest count, then alphabetical kind.
+    assert result["primaryMismatchKind"] == "ARGUMENT_MISMATCH"
+    assert result["mismatchClass"] == CLASS_OPERAND
+
+
+def test_plurality_insertion_dominant_without_majority() -> None:
+    """Observed live on swkotor.exe's sub_11d70: INSERTION (64) is the
+    plurality winner out of 180 total but not a majority (64*2=128 < 180)."""
+    result = classify_mismatch(
+        histogram={"ARGUMENT_MISMATCH": 60, "DELETION": 26, "INSERTION": 64, "REPLACEMENT": 30},
+        detail_level="instruction",
+    )
+
+    assert result["mismatchClass"] == CLASS_INSERT_DELETE
+    assert result["primaryMismatchKind"] == "INSERTION"
