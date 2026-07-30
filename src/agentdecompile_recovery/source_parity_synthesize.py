@@ -19118,6 +19118,48 @@ def generate(row: dict[str, Any], max_variants: int) -> list[GeneratedCandidate]
     return candidates
 
 
+_CALLEE_CALL_RE = re.compile(r"\b(sub_[0-9a-fA-F]+|FUN_[0-9a-fA-F]+)\s*\(")
+
+
+def infer_callee_prototype(callee_name: str, source_generation_root: Path) -> str | None:
+    """Infer a calling-convention-correct extern prototype for a callee by
+    reusing its own packaged-source candidate (a sibling directory under the
+    same source-generation root) and running it through the same
+    infer_packaged_callconv/packaged_stack_bytes inference already used for
+    the caller itself.
+
+    Without this, a call to another sub_XXXX/FUN_XXXX function compiles with
+    an implicit (cdecl) declaration regardless of the callee's real calling
+    convention, so a stdcall/fastcall callee causes the caller to emit a
+    spurious `add esp, N` stack-cleanup instruction that the real compiled
+    binary never has (the real callee already cleaned the stack itself).
+    """
+    matches = sorted(source_generation_root.glob(f"{callee_name}_*/candidate.c"))
+    if not matches:
+        return None
+    callee_source = matches[0].read_text(encoding="utf-8", errors="replace")
+    callconv = infer_packaged_callconv(callee_source, ".c")
+    if callconv not in {"stdcall", "fastcall"}:
+        return None
+    stack_bytes = packaged_stack_bytes({"name": callee_name}, callee_name, source=callee_source)
+    if stack_bytes is None or stack_bytes % 4 != 0:
+        return None
+    param_count = stack_bytes // 4
+    params = ", ".join(["unsigned int"] * param_count) if param_count else "void"
+    keyword = "__stdcall" if callconv == "stdcall" else "__fastcall"
+    return f"extern void {keyword} {callee_name}({params});"
+
+
+def infer_callee_prototypes(source: str, self_name: str, source_generation_root: Path) -> str:
+    names = sorted({name for name in _CALLEE_CALL_RE.findall(source) if name != self_name})
+    prototypes = []
+    for name in names:
+        prototype = infer_callee_prototype(name, source_generation_root)
+        if prototype:
+            prototypes.append(prototype)
+    return "\n".join(prototypes)
+
+
 def packaged_source_candidate(row: dict[str, Any]) -> GeneratedCandidate | None:
     if not row.get("sourceTask"):
         return None
@@ -19133,7 +19175,11 @@ def packaged_source_candidate(row: dict[str, Any]) -> GeneratedCandidate | None:
     # Packaged .c sources are raw decompiler output (e.g. Ghidra's undefined4/code/byte
     # pseudo-types) with no typedefs of their own; without the shim MSVC/clang fail to
     # even parse the file, so nothing downstream ever reaches objdiff.
-    compile_source = build_shim(source) + "\n\n" + source if suffix == ".c" else source
+    if suffix == ".c":
+        callee_prototypes = infer_callee_prototypes(source, c_name, source_path.parent.parent)
+        compile_source = build_shim(source) + (f"\n{callee_prototypes}\n" if callee_prototypes else "") + "\n" + source
+    else:
+        compile_source = source
     return GeneratedCandidate(
         rule=str(automatic_generator.get("rule") or "packaged-source"),
         variant="packaged-source",
