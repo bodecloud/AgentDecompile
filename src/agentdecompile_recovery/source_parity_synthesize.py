@@ -629,6 +629,26 @@ def inc_abs_global(row: dict[str, Any], c_name: str, data: bytes) -> list[Genera
     ]
 
 
+def single_absolute_address_relocation(offset: int, addr: int) -> list[dict[str, Any]]:
+    """Return the absoluteAddressRelocations shape for one absolute-address reference.
+
+    Matches the target-side reconstruction absolute_address_relocations() reads
+    (render_target_coff_for_candidate) -- without this, the synthetic target
+    object renders the address as a raw byte blob instead of a symbol
+    relocation, and a candidate referencing the same global through a
+    compiler-visible symbol can never byte-match it.
+    """
+
+    return [
+        {
+            "offset": offset,
+            "type": "IMAGE_REL_I386_DIR32",
+            "symbol": f"_DAT_{addr:08x}",
+            "decodedAddress": f"0x{addr:08x}",
+        }
+    ]
+
+
 def inc_field_return_stack4(row: dict[str, Any], c_name: str, data: bytes) -> list[GeneratedCandidate]:
     if len(data) != 10 or data[0] != 0x8B or data[1] != 0x41 or data[3] != 0x40 or data[4] != 0x89 or data[5] != 0x41:
         return []
