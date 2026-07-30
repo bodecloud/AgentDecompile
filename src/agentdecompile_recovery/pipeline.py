@@ -751,6 +751,11 @@ class RecoveryRunner:
             limit=self.config.source_task_limit,
             offset=self.config.source_task_offset,
         )
+        truncation = summary.get("candidateTruncation") if isinstance(summary, dict) else None
+        if isinstance(truncation, dict) and truncation.get("warning"):
+            # A truncated run still reports success, so the only way an operator
+            # learns the inventory was cut is if we say so here.
+            print(f"agentdecompile-reconstruct: warning: {truncation['warning']}", file=sys.stderr)
         atomic_write_json(self.run_dir / "source-generation/summary.json", summary)
         return summary
 
@@ -1030,8 +1035,36 @@ class RecoveryRunner:
         }
 
 
+def resolve_source_synthesis_mode(
+    mode: str | None,
+    *,
+    target_format: str | None,
+    vc_root_available: bool,
+) -> str:
+    """Pick the compiler lane when `--source-synthesis` is left at `auto`.
+
+    A candidate object is only comparable to the target when both came from
+    compatible toolchains. Diffing a clang-built object against an MSVC-built PE
+    slice diverges on calling convention, prologue shape, and register
+    allocation before any source-shape question is reached -- so a clang default
+    caps the accept rate for every Windows target regardless of how good
+    candidate generation becomes.
+
+    Mirrors the format/stem-derived profile rule in STRATEGY.md. An explicit
+    mode always wins; this only fills in `auto`.
+    """
+
+    if mode and mode != "auto":
+        return mode
+    if (target_format or "").strip().lower() == "pe":
+        # clang-cl is the fallback rather than clang: it at least matches MSVC
+        # calling conventions and name decoration.
+        return "msvc" if vc_root_available else "clang-cl"
+    return "clang"
+
+
 def compiler_for_source_synthesis_mode(mode: str) -> str:
-    if mode == "dry-run":
+    if mode in {"dry-run", "none"}:
         return "clang"
     if mode in {"clang", "clang-cl", "msvc"}:
         return mode
