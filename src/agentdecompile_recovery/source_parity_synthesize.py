@@ -574,6 +574,15 @@ def inc_abs_global(row: dict[str, Any], c_name: str, data: bytes) -> list[Genera
     if len(data) != 7 or data[0] != 0xFF or data[1] != 0x05 or data[-1] != 0xC3:
         return []
     addr = u32(data[2:6])
+    global_symbol = f"_DAT_{addr:08x}"
+    absolute_address_relocations = [
+        {
+            "offset": 2,
+            "type": "IMAGE_REL_I386_DIR32",
+            "symbol": global_symbol,
+            "decodedAddress": f"0x{addr:08x}",
+        }
+    ]
     plain_source = header("inc-absolute-global", row) + "\n".join(
         [
             f"void {c_name}(void) {{",
@@ -599,7 +608,10 @@ def inc_abs_global(row: dict[str, Any], c_name: str, data: bytes) -> list[Genera
             source=plain_source,
             callconv="cdecl",
             return_type="void",
-            evidence={"absoluteAddress": f"0x{addr:08x}"},
+            evidence={
+                "absoluteAddress": f"0x{addr:08x}",
+                "absoluteAddressRelocations": absolute_address_relocations,
+            },
         ),
         GeneratedCandidate(
             rule="inc-absolute-global",
@@ -609,7 +621,10 @@ def inc_abs_global(row: dict[str, Any], c_name: str, data: bytes) -> list[Genera
             source=volatile_source,
             callconv="cdecl",
             return_type="void",
-            evidence={"absoluteAddress": f"0x{addr:08x}"},
+            evidence={
+                "absoluteAddress": f"0x{addr:08x}",
+                "absoluteAddressRelocations": absolute_address_relocations,
+            },
         )
     ]
 
