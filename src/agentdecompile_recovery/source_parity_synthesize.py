@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .package_verify import build_shim, compile_with_msvc
-from .state import now
 
 ROOT = Path.cwd()
 DEFAULT_VC_ROOT: Path | None = None
@@ -19195,7 +19194,7 @@ def infer_packaged_symbol(row: dict[str, Any], source: str, c_name: str, suffix:
             return match.group(1)
         return c_name
     callconv = infer_packaged_callconv(source, suffix)
-    stack_bytes = packaged_stack_bytes(row, c_name)
+    stack_bytes = packaged_stack_bytes(row, c_name, source=source)
     if callconv == "stdcall" and stack_bytes is not None:
         return f"_{c_name}@{stack_bytes}"
     if callconv == "fastcall" and stack_bytes is not None:
@@ -19203,7 +19202,26 @@ def infer_packaged_symbol(row: dict[str, Any], source: str, c_name: str, suffix:
     return cdecl_symbol(c_name)
 
 
-def packaged_stack_bytes(row: dict[str, Any], c_name: str) -> int | None:
+# Pseudo-types (and their real-type equivalents) that occupy 8 bytes on the
+# stack rather than the 4-byte default -- matched against a parameter's type
+# tokens (everything before the parameter name).
+_EIGHT_BYTE_PARAM_TYPE_RE = re.compile(r"\b(undefined8|double|long\s+long|__int64)\b")
+
+
+def _count_stack_bytes_from_parameter_list(params_text: str) -> int:
+    params_text = params_text.strip()
+    if not params_text or params_text == "void":
+        return 0
+    total = 0
+    for param in params_text.split(","):
+        param = param.strip()
+        if not param:
+            continue
+        total += 8 if _EIGHT_BYTE_PARAM_TYPE_RE.search(param) else 4
+    return total
+
+
+def packaged_stack_bytes(row: dict[str, Any], c_name: str, *, source: str | None = None) -> int | None:
     generator = row.get("automaticGenerator") if isinstance(row.get("automaticGenerator"), dict) else {}
     stack_bytes = optional_int(generator.get("stackBytes"))
     if stack_bytes is not None:
@@ -19215,6 +19233,15 @@ def packaged_stack_bytes(row: dict[str, Any], c_name: str) -> int | None:
     match = re.search(r"_(\d+)$", c_name)
     if match:
         return int(match.group(1))
+    if source:
+        # No external metadata carries the stack-byte count (common for a
+        # plain decompiler-named function like sub_1234 with no @N suffix
+        # anywhere) -- count it directly from the parsed function's own
+        # parameter list rather than silently falling back to cdecl naming
+        # for what may genuinely be a stdcall/fastcall function.
+        sig_match = re.search(rf"\b{re.escape(c_name)}\s*\(([^)]*)\)", source)
+        if sig_match:
+            return _count_stack_bytes_from_parameter_list(sig_match.group(1))
     return None
 
 
