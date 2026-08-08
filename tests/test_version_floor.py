@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-import tomllib
+import re
 
 from packaging.version import Version
 
@@ -10,5 +10,7 @@ from agentdecompile_cli import __version__
 
 def test_package_version_stays_on_configured_fallback_line_or_newer() -> None:
     pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
-    fallback_version = tomllib.loads(pyproject.read_text())["tool"]["setuptools_scm"]["fallback_version"]
+    match = re.search(r'^fallback_version\s*=\s*"([^"]+)"\s*$', pyproject.read_text(), re.MULTILINE)
+    assert match is not None
+    fallback_version = match.group(1)
     assert Version(__version__.split("+", 1)[0]) >= Version(f"{fallback_version}.dev0")
