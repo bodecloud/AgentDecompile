@@ -13,4 +13,4 @@ def test_package_version_stays_on_configured_fallback_line_or_newer() -> None:
     match = re.search(r'^fallback_version\s*=\s*"([^"]+)"\s*$', pyproject.read_text(), re.MULTILINE)
     assert match is not None
     fallback_version = match.group(1)
-    assert Version(__version__.split("+", 1)[0]) >= Version(f"{fallback_version}.dev0")
+    assert Version(__version__.split("+", 1)[0]) >= Version(fallback_version)
